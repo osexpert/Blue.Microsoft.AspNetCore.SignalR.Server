@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -6,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Microsoft.AspNetCore.SignalR.Hubs
 {
@@ -43,11 +43,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 				{
 					return false;
 				}
-				if (_globalConnectionAuthorizer != null && !_globalConnectionAuthorizer.AuthorizeHubConnection(hubDescriptor, request))
-				{
-					return false;
-				}
-				return _connectionAuthorizersCache.GetOrAdd(hubDescriptor.HubType, (Type hubType) => hubType.GetTypeInfo().GetCustomAttributes().OfType<IAuthorizeHubConnection>()).All((IAuthorizeHubConnection a) => a.AuthorizeHubConnection(hubDescriptor, request));
+				return (_globalConnectionAuthorizer == null || _globalConnectionAuthorizer.AuthorizeHubConnection(hubDescriptor, request)) && _connectionAuthorizersCache.GetOrAdd(hubDescriptor.HubType, (Type hubType) => hubType.GetTypeInfo().GetCustomAttributes().OfType<IAuthorizeHubConnection>()).All((IAuthorizeHubConnection a) => a.AuthorizeHubConnection(hubDescriptor, request));
 			});
 		}
 
@@ -66,7 +62,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 						return invoke(context);
 					}
 				}
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.FromError<object>(new NotAuthorizedException(string.Format(CultureInfo.CurrentCulture, Resources.Error_CallerNotAuthorizedToInvokeMethodOn, context.MethodDescriptor.Name, context.MethodDescriptor.Hub.Name)));
+				return TaskAsyncHelper.FromError<object>(new NotAuthorizedException(string.Format(CultureInfo.CurrentCulture, Resources.Error_CallerNotAuthorizedToInvokeMethodOn, context.MethodDescriptor.Name, context.MethodDescriptor.Hub.Name)));
 			});
 		}
 	}

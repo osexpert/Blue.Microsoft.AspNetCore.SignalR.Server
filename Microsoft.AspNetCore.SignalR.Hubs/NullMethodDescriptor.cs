@@ -18,7 +18,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 		public override Func<IHub, object[], object> Invoker => delegate
 		{
 			IEnumerable<string> enumerable = GetAvailableMethodSignatures().ToArray();
-			string format = enumerable.Any() ? string.Format(CultureInfo.CurrentCulture, Resources.Error_MethodCouldNotBeResolvedCandidates, _methodName, "\n" + string.Join("\n", enumerable)) : string.Format(CultureInfo.CurrentCulture, Resources.Error_MethodCouldNotBeResolved, _methodName);
+			string format = (enumerable.Any() ? string.Format(CultureInfo.CurrentCulture, Resources.Error_MethodCouldNotBeResolvedCandidates, _methodName, "\n" + string.Join("\n", enumerable)) : string.Format(CultureInfo.CurrentCulture, Resources.Error_MethodCouldNotBeResolved, _methodName));
 			throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, format));
 		};
 
@@ -35,9 +35,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		private IEnumerable<string> GetAvailableMethodSignatures()
 		{
-			return from m in _availableMethods
-			select m.Name + "(" + string.Join(", ", from p in m.Parameters
-			select p.Name + ":" + p.ParameterType.get_Name()) + "):" + m.ReturnType.get_Name();
+			return _availableMethods.Select((MethodDescriptor m) => m.Name + "(" + string.Join(", ", m.Parameters.Select((ParameterDescriptor p) => p.Name + ":" + p.ParameterType.Name)) + "):" + m.ReturnType.Name);
 		}
 	}
 }

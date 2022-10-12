@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.SignalR.Infrastructure;
 using System;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR.Infrastructure;
 
 namespace Microsoft.AspNetCore.SignalR.WebSockets
 {
@@ -25,43 +25,43 @@ namespace Microsoft.AspNetCore.SignalR.WebSockets
 
 		public static async Task<WebSocketMessage> ReadMessageAsync(WebSocket webSocket, int bufferSize, int? maxMessageSize, CancellationToken disconnectToken)
 		{
-			if (TryGetMessage(await webSocket.ReceiveAsync(_emptyArraySegment, disconnectToken).PreserveCultureNotContext(), null, out WebSocketMessage message))
+			if (TryGetMessage(await webSocket.ReceiveAsync(_emptyArraySegment, disconnectToken).PreserveCultureNotContext(), null, out var message))
 			{
 				return message;
 			}
 			byte[] buffer = new byte[bufferSize];
 			ArraySegment<byte> arraySegment = new ArraySegment<byte>(buffer);
 			WebSocketReceiveResult webSocketReceiveResult = await webSocket.ReceiveAsync(arraySegment, disconnectToken).PreserveCultureNotContext();
-			if (!TryGetMessage(webSocketReceiveResult, buffer, out message))
+			if (TryGetMessage(webSocketReceiveResult, buffer, out message))
 			{
-				ByteBuffer bytebuffer = new ByteBuffer(maxMessageSize);
-				bytebuffer.Append(BufferSliceToByteArray(buffer, webSocketReceiveResult.Count));
-				WebSocketMessageType originalMessageType = webSocketReceiveResult.MessageType;
-				do
-				{
-					webSocketReceiveResult = await webSocket.ReceiveAsync(arraySegment, disconnectToken).PreserveCultureNotContext();
-					if (webSocketReceiveResult.MessageType == WebSocketMessageType.Close)
-					{
-						return WebSocketMessage.CloseMessage;
-					}
-					if (webSocketReceiveResult.MessageType != originalMessageType)
-					{
-						throw new InvalidOperationException("Incorrect message type");
-					}
-					bytebuffer.Append(BufferSliceToByteArray(buffer, webSocketReceiveResult.Count));
-				}
-				while (!webSocketReceiveResult.EndOfMessage);
-				switch (webSocketReceiveResult.MessageType)
-				{
-				case WebSocketMessageType.Binary:
-					return new WebSocketMessage(bytebuffer.GetByteArray(), WebSocketMessageType.Binary);
-				case WebSocketMessageType.Text:
-					return new WebSocketMessage(bytebuffer.GetString(), WebSocketMessageType.Text);
-				default:
-					throw new InvalidOperationException("Unknown message type");
-				}
+				return message;
 			}
-			return message;
+			ByteBuffer bytebuffer = new ByteBuffer(maxMessageSize);
+			bytebuffer.Append(BufferSliceToByteArray(buffer, webSocketReceiveResult.Count));
+			WebSocketMessageType originalMessageType = webSocketReceiveResult.MessageType;
+			do
+			{
+				webSocketReceiveResult = await webSocket.ReceiveAsync(arraySegment, disconnectToken).PreserveCultureNotContext();
+				if (webSocketReceiveResult.MessageType == WebSocketMessageType.Close)
+				{
+					return WebSocketMessage.CloseMessage;
+				}
+				if (webSocketReceiveResult.MessageType != originalMessageType)
+				{
+					throw new InvalidOperationException("Incorrect message type");
+				}
+				bytebuffer.Append(BufferSliceToByteArray(buffer, webSocketReceiveResult.Count));
+			}
+			while (!webSocketReceiveResult.EndOfMessage);
+			switch (webSocketReceiveResult.MessageType)
+			{
+			case WebSocketMessageType.Binary:
+				return new WebSocketMessage(bytebuffer.GetByteArray(), WebSocketMessageType.Binary);
+			case WebSocketMessageType.Text:
+				return new WebSocketMessage(bytebuffer.GetString(), WebSocketMessageType.Text);
+			default:
+				throw new InvalidOperationException("Unknown message type");
+			}
 		}
 
 		private static bool TryGetMessage(WebSocketReceiveResult receiveResult, byte[] buffer, out WebSocketMessage message)

@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.SignalR.Infrastructure;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.SignalR.Infrastructure;
+using Newtonsoft.Json;
 
 namespace Microsoft.AspNetCore.SignalR.Json
 {
@@ -21,27 +21,21 @@ namespace Microsoft.AspNetCore.SignalR.Json
 
 		private object ReadJsonObject(JsonReader reader)
 		{
-			//IL_0001: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0006: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0007: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0009: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0053: Expected I4, but got Unknown
-			JsonToken tokenType = reader.get_TokenType();
-			switch (tokenType - 1)
+			switch (reader.TokenType)
 			{
-			case 0:
+			case JsonToken.StartObject:
 				return ReadObject(reader);
-			case 1:
+			case JsonToken.StartArray:
 				return ReadArray(reader);
-			case 6:
-			case 7:
-			case 8:
-			case 9:
-			case 10:
-			case 11:
-			case 15:
-			case 16:
-				return reader.get_Value();
+			case JsonToken.Integer:
+			case JsonToken.Float:
+			case JsonToken.String:
+			case JsonToken.Boolean:
+			case JsonToken.Null:
+			case JsonToken.Undefined:
+			case JsonToken.Date:
+			case JsonToken.Bytes:
+				return reader.Value;
 			default:
 				throw new NotSupportedException();
 			}
@@ -49,54 +43,42 @@ namespace Microsoft.AspNetCore.SignalR.Json
 
 		private object ReadArray(JsonReader reader)
 		{
-			//IL_0009: Unknown result type (might be due to invalid IL or missing references)
-			//IL_000e: Unknown result type (might be due to invalid IL or missing references)
-			//IL_000f: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0012: Invalid comparison between Unknown and I4
-			//IL_0034: Unknown result type (might be due to invalid IL or missing references)
 			List<object> list = new List<object>();
 			while (reader.Read())
 			{
-				JsonToken tokenType = reader.get_TokenType();
-				if ((int)tokenType == 14)
+				JsonToken tokenType = reader.TokenType;
+				if (tokenType != JsonToken.EndArray)
 				{
-					return list;
+					object item = ReadJsonObject(reader);
+					list.Add(item);
+					continue;
 				}
-				object item = ReadJsonObject(reader);
-				list.Add(item);
+				return list;
 			}
 			throw new JsonSerializationException(Resources.Error_ParseObjectFailed);
 		}
 
 		private object ReadObject(JsonReader reader)
 		{
-			//IL_000e: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0013: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0014: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0016: Invalid comparison between Unknown and I4
-			//IL_0018: Unknown result type (might be due to invalid IL or missing references)
-			//IL_001b: Invalid comparison between Unknown and I4
-			//IL_0038: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0057: Unknown result type (might be due to invalid IL or missing references)
-			//IL_006a: Unknown result type (might be due to invalid IL or missing references)
 			Dictionary<string, object> dictionary = new Dictionary<string, object>(new Microsoft.AspNetCore.SignalR.Infrastructure.SipHashBasedStringEqualityComparer());
 			while (reader.Read())
 			{
-				JsonToken tokenType = reader.get_TokenType();
-				if ((int)tokenType != 4)
+				string key;
+				switch (reader.TokenType)
 				{
-					if ((int)tokenType == 13)
+				case JsonToken.PropertyName:
+					key = reader.Value.ToString();
+					if (!reader.Read())
 					{
-						return dictionary;
+						throw new JsonSerializationException(Resources.Error_ParseObjectFailed);
 					}
+					break;
+				case JsonToken.EndObject:
+					return dictionary;
+				default:
 					throw new JsonSerializationException(Resources.Error_ParseObjectFailed);
 				}
-				string key = reader.get_Value().ToString();
-				if (!reader.Read())
-				{
-					throw new JsonSerializationException(Resources.Error_ParseObjectFailed);
-				}
-				object obj2 = dictionary[key] = ReadJsonObject(reader);
+				object obj2 = (dictionary[key] = ReadJsonObject(reader));
 			}
 			throw new JsonSerializationException(Resources.Error_ParseObjectFailed);
 		}
@@ -104,11 +86,6 @@ namespace Microsoft.AspNetCore.SignalR.Json
 		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
 		{
 			throw new NotImplementedException();
-		}
-
-		public SipHashBasedDictionaryConverter()
-			: this()
-		{
 		}
 	}
 }

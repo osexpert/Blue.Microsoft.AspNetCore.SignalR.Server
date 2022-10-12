@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging;
 using System;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.AspNetCore.SignalR.WebSockets
 {
@@ -64,7 +64,7 @@ namespace Microsoft.AspNetCore.SignalR.WebSockets
 		{
 			if (_closed)
 			{
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+				return TaskAsyncHelper.Empty;
 			}
 			return base.SendAsync(message, WebSocketMessageType.Text);
 		}
@@ -73,7 +73,7 @@ namespace Microsoft.AspNetCore.SignalR.WebSockets
 		{
 			if (_closed)
 			{
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+				return TaskAsyncHelper.Empty;
 			}
 			return base.CloseAsync();
 		}

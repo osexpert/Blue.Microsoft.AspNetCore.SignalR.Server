@@ -59,7 +59,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 
 		public bool TriggerAck(string id)
 		{
-			if (_acks.TryRemove(id, out AckInfo value))
+			if (_acks.TryRemove(id, out var value))
 			{
 				value.Tcs.TrySetResult(null);
 				return true;
@@ -71,7 +71,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 		{
 			foreach (KeyValuePair<string, AckInfo> ack in _acks)
 			{
-				if (DateTime.UtcNow - ack.Value.Created > _ackThreshold && _acks.TryRemove(ack.Key, out AckInfo value))
+				if (DateTime.UtcNow - ack.Value.Created > _ackThreshold && _acks.TryRemove(ack.Key, out var value))
 				{
 					value.Tcs.TrySetCanceled();
 				}
@@ -80,18 +80,19 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 
 		protected virtual void Dispose(bool disposing)
 		{
-			if (disposing)
+			if (!disposing)
 			{
-				if (_timer != null)
+				return;
+			}
+			if (_timer != null)
+			{
+				_timer.Dispose();
+			}
+			foreach (KeyValuePair<string, AckInfo> ack in _acks)
+			{
+				if (_acks.TryRemove(ack.Key, out var value))
 				{
-					_timer.Dispose();
-				}
-				foreach (KeyValuePair<string, AckInfo> ack in _acks)
-				{
-					if (_acks.TryRemove(ack.Key, out AckInfo value))
-					{
-						value.Tcs.TrySetCanceled();
-					}
+					value.Tcs.TrySetCanceled();
 				}
 			}
 		}

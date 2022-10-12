@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.SignalR.Hubs;
 using System;
 using System.Linq;
 using System.Security.Principal;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR.Hubs;
 
 namespace Microsoft.AspNetCore.SignalR
 {
@@ -67,7 +67,7 @@ namespace Microsoft.AspNetCore.SignalR
 			{
 				return true;
 			}
-			return UserAuthorized(request.get_HttpContext().get_User());
+			return UserAuthorized(request.HttpContext.User);
 		}
 
 		public virtual bool AuthorizeHubMethodInvocation(IHubIncomingInvokerContext hubIncomingInvokerContext, bool appliesToMethod)
@@ -111,12 +111,12 @@ namespace Microsoft.AspNetCore.SignalR
 				return new string[0];
 			}
 			return (from piece in original.Split(new char[1]
-			{
-				','
-			})
-			let trimmed = piece.Trim()
-			where !string.IsNullOrEmpty(trimmed)
-			select trimmed).ToArray();
+				{
+					','
+				})
+				let trimmed = piece.Trim()
+				where !string.IsNullOrEmpty(trimmed)
+				select trimmed).ToArray();
 		}
 	}
 }

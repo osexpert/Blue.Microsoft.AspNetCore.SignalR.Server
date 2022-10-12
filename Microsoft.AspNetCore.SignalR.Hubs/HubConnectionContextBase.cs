@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.SignalR.Infrastructure;
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.SignalR.Infrastructure;
 
 namespace Microsoft.AspNetCore.SignalR.Hubs
 {

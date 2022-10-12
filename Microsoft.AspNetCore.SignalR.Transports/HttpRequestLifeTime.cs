@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.SignalR.Infrastructure;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR.Infrastructure;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.AspNetCore.SignalR.Transports
 {
@@ -63,7 +63,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		public void Complete(Exception error)
 		{
-			LoggerExtensions.LogDebug(_logger, "DrainWrites(" + _connectionId + ")", Array.Empty<object>());
+			_logger.LogDebug("DrainWrites(" + _connectionId + ")");
 			LifetimeContext state2 = new LifetimeContext(_transport, _lifetimeTcs, error);
 			_transport.ApplyState(TransportConnectionStates.QueueDrained);
 			_writeQueue.Drain().Catch(_logger).Finally(delegate(object state)
@@ -72,11 +72,11 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			}, state2);
 			if (error != null)
 			{
-				LoggerExtensions.LogError(_logger, "CompleteRequest (" + _connectionId + ") failed: " + error.GetBaseException(), Array.Empty<object>());
+				_logger.LogError("CompleteRequest (" + _connectionId + ") failed: " + error.GetBaseException());
 			}
 			else
 			{
-				LoggerExtensions.LogInformation(_logger, "CompleteRequest (" + _connectionId + ")", Array.Empty<object>());
+				_logger.LogInformation("CompleteRequest (" + _connectionId + ")");
 			}
 		}
 	}

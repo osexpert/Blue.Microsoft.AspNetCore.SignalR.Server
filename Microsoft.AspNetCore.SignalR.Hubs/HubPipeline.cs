@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.AspNetCore.SignalR.Hubs
 {
@@ -48,7 +48,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		public HubPipeline(IOptions<SignalROptions> options)
 		{
-			_pipeline = new Lazy<ComposedPipeline>(() => new ComposedPipeline(options.get_Value().Hubs.PipelineModules));
+			_pipeline = new Lazy<ComposedPipeline>(() => new ComposedPipeline(options.Value.Hubs.PipelineModules));
 		}
 
 		public Task<object> Invoke(IHubIncomingInvokerContext context)

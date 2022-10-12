@@ -25,12 +25,12 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		private static string GetHubTypeName(Type type)
 		{
-			int num = type.get_Name().LastIndexOf('`');
+			int num = type.Name.LastIndexOf('`');
 			if (num == -1)
 			{
-				return type.get_Name();
+				return type.Name;
 			}
-			return type.get_Name().Substring(0, num);
+			return type.Name.Substring(0, num);
 		}
 	}
 }

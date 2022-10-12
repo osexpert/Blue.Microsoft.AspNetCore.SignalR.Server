@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.SignalR.Infrastructure;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.SignalR.Infrastructure;
 
 namespace Microsoft.AspNetCore.SignalR
 {
@@ -30,8 +30,8 @@ namespace Microsoft.AspNetCore.SignalR
 		}
 
 		public ConnectionMessage(IList<string> signals, object value)
+			: this(signals, value, Microsoft.AspNetCore.SignalR.Infrastructure.ListHelper<string>.Empty)
 		{
-			this = new ConnectionMessage(signals, value, Microsoft.AspNetCore.SignalR.Infrastructure.ListHelper<string>.Empty);
 		}
 
 		public ConnectionMessage(IList<string> signals, object value, IList<string> excludedSignals)
@@ -43,8 +43,8 @@ namespace Microsoft.AspNetCore.SignalR
 		}
 
 		public ConnectionMessage(string signal, object value)
+			: this(signal, value, Microsoft.AspNetCore.SignalR.Infrastructure.ListHelper<string>.Empty)
 		{
-			this = new ConnectionMessage(signal, value, Microsoft.AspNetCore.SignalR.Infrastructure.ListHelper<string>.Empty);
 		}
 
 		public ConnectionMessage(string signal, object value, IList<string> excludedSignals)

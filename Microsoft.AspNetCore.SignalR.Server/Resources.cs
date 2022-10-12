@@ -22,7 +22,7 @@ namespace Microsoft.AspNetCore.SignalR.Server
 			{
 				if (resourceMan == null)
 				{
-					resourceMan = new ResourceManager("Microsoft.AspNetCore.SignalR.Server.Resources", typeof(Resources).GetTypeInfo().get_Assembly());
+					resourceMan = new ResourceManager("Microsoft.AspNetCore.SignalR.Server.Resources", typeof(Resources).GetTypeInfo().Assembly);
 				}
 				return resourceMan;
 			}

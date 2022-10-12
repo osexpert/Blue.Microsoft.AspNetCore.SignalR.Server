@@ -1,6 +1,5 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Primitives;
 using System;
+using Microsoft.AspNetCore.Http;
 
 namespace Microsoft.AspNetCore.SignalR.Infrastructure
 {
@@ -27,12 +26,11 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 
 		public Version Resolve(HttpRequest request)
 		{
-			//IL_0019: Unknown result type (might be due to invalid IL or missing references)
 			if (request == null)
 			{
 				throw new ArgumentNullException("request");
 			}
-			if (Version.TryParse(StringValues.op_Implicit(request.get_Query().get_Item("clientProtocol")), out Version result))
+			if (Version.TryParse(request.Query["clientProtocol"], out var result))
 			{
 				if (result > _maxSupportedProtocol)
 				{

@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.SignalR.Infrastructure;
-using Microsoft.AspNetCore.SignalR.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR.Infrastructure;
+using Microsoft.AspNetCore.SignalR.Messaging;
 
 namespace Microsoft.AspNetCore.SignalR
 {
@@ -40,8 +40,7 @@ namespace Microsoft.AspNetCore.SignalR
 			{
 				throw new ArgumentNullException("groupNames");
 			}
-			ConnectionMessage message = new ConnectionMessage((from groupName in groupNames
-			select CreateQualifiedName(groupName)).ToList(), value, PrefixHelper.GetPrefixedConnectionIds(excludeConnectionIds));
+			ConnectionMessage message = new ConnectionMessage(groupNames.Select((string groupName) => CreateQualifiedName(groupName)).ToList(), value, PrefixHelper.GetPrefixedConnectionIds(excludeConnectionIds));
 			return _connection.Send(message);
 		}
 

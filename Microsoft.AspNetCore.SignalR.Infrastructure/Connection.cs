@@ -1,14 +1,14 @@
-using Microsoft.AspNetCore.SignalR.Json;
-using Microsoft.AspNetCore.SignalR.Messaging;
-using Microsoft.AspNetCore.SignalR.Transports;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR.Json;
+using Microsoft.AspNetCore.SignalR.Messaging;
+using Microsoft.AspNetCore.SignalR.Transports;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Microsoft.AspNetCore.SignalR.Infrastructure
 {
@@ -66,13 +66,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 
 		public string DefaultSignal => _baseSignal;
 
-		IList<string> ISubscriber.EventKeys
-		{
-			get
-			{
-				return _signals;
-			}
-		}
+		IList<string> ISubscriber.EventKeys => _signals;
 
 		public Action<TextWriter> WriteCursor
 		{
@@ -104,11 +98,11 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 			_connectionId = connectionId;
 			_signals = new List<string>(signals.Concat(groups));
 			_groups = new DiffSet<string>(groups);
-			_logger = LoggerFactoryExtensions.CreateLogger<Connection>(loggerFactory);
+			_logger = loggerFactory.CreateLogger<Connection>();
 			_ackHandler = ackHandler;
 			_counters = performanceCounterManager;
 			_protectedData = protectedData;
-			_excludeMessage = ((Message m) => ExcludeMessage(m));
+			_excludeMessage = (Message m) => ExcludeMessage(m);
 			_pool = pool;
 		}
 
@@ -136,7 +130,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 		{
 			if (signals.Count == 0)
 			{
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+				return TaskAsyncHelper.Empty;
 			}
 			ArraySegment<byte> messageBuffer = GetMessageBuffer(value);
 			string filter = GetFilter(excludedSignals);
@@ -236,14 +230,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 			return message.Filter.Split(new char[1]
 			{
 				'|'
-			}).Any(delegate(string signal)
-			{
-				if (!Identity.Equals(signal, StringComparison.OrdinalIgnoreCase) && !_signals.Contains(signal))
-				{
-					return _groups.Contains(signal);
-				}
-				return true;
-			});
+			}).Any((string signal) => Identity.Equals(signal, StringComparison.OrdinalIgnoreCase) || _signals.Contains(signal) || _groups.Contains(signal));
 		}
 
 		private void ProcessResults(MessageResult result)
@@ -258,19 +245,14 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 		{
 			if (message.IsAck)
 			{
-				LoggerExtensions.LogError(connection._logger, "Connection {0} received an unexpected ACK message.", new object[1]
-				{
-					connection.Identity
-				});
+				connection._logger.LogError("Connection {0} received an unexpected ACK message.", connection.Identity);
+				return;
 			}
-			else
+			Command command = connection._serializer.Parse<Command>(message.Value, message.Encoding);
+			connection.ProcessCommand(command);
+			if (message.WaitForAck)
 			{
-				Command command = connection._serializer.Parse<Command>(message.Value, message.Encoding);
-				connection.ProcessCommand(command);
-				if (message.WaitForAck)
-				{
-					connection._bus.Ack(connection._connectionId, message.CommandId).Catch(connection._logger);
-				}
+				connection._bus.Ack(connection._connectionId, message.CommandId).Catch(connection._logger);
 			}
 		}
 

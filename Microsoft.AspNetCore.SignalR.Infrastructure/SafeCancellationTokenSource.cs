@@ -36,20 +36,19 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 
 		public void Cancel(bool useNewThread = true)
 		{
-			if (Interlocked.CompareExchange(ref _state, 1, 0) == 0)
+			if (Interlocked.CompareExchange(ref _state, 1, 0) != 0)
 			{
-				if (!useNewThread)
-				{
-					CancelCore();
-				}
-				else
-				{
-					ThreadPool.QueueUserWorkItem(delegate
-					{
-						CancelCore();
-					});
-				}
+				return;
 			}
+			if (!useNewThread)
+			{
+				CancelCore();
+				return;
+			}
+			ThreadPool.QueueUserWorkItem(delegate
+			{
+				CancelCore();
+			});
 		}
 
 		private void CancelCore()
@@ -74,9 +73,6 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 			{
 				switch (Interlocked.Exchange(ref _state, 3))
 				{
-				case 1:
-				case 3:
-					break;
 				case 0:
 				case 2:
 					_cts.Dispose();
@@ -84,6 +80,9 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 					break;
 				case 4:
 					Interlocked.Exchange(ref _state, 4);
+					break;
+				case 1:
+				case 3:
 					break;
 				}
 			}

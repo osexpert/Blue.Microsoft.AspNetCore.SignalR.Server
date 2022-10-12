@@ -4,7 +4,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 {
 	public class HubResponse
 	{
-		[JsonProperty(/*Could not decode attribute arguments.*/)]
+		[JsonProperty("R", NullValueHandling = NullValueHandling.Ignore)]
 		public object Result
 		{
 			get;
@@ -18,35 +18,35 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			set;
 		}
 
-		[JsonProperty(/*Could not decode attribute arguments.*/)]
+		[JsonProperty("P", NullValueHandling = NullValueHandling.Ignore)]
 		public object Progress
 		{
 			get;
 			set;
 		}
 
-		[JsonProperty(/*Could not decode attribute arguments.*/)]
+		[JsonProperty("H", NullValueHandling = NullValueHandling.Ignore)]
 		public bool? IsHubException
 		{
 			get;
 			set;
 		}
 
-		[JsonProperty(/*Could not decode attribute arguments.*/)]
+		[JsonProperty("E", NullValueHandling = NullValueHandling.Ignore)]
 		public string Error
 		{
 			get;
 			set;
 		}
 
-		[JsonProperty(/*Could not decode attribute arguments.*/)]
+		[JsonProperty("T", NullValueHandling = NullValueHandling.Ignore)]
 		public string StackTrace
 		{
 			get;
 			set;
 		}
 
-		[JsonProperty(/*Could not decode attribute arguments.*/)]
+		[JsonProperty("D", NullValueHandling = NullValueHandling.Ignore)]
 		public object ErrorData
 		{
 			get;

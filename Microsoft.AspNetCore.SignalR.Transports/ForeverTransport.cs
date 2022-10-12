@@ -1,13 +1,11 @@
+using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR.Infrastructure;
 using Microsoft.AspNetCore.SignalR.Json;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.AspNetCore.SignalR.Transports
 {
@@ -123,9 +121,9 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		protected void EnsureFormContentType()
 		{
-			if (string.IsNullOrEmpty(base.Context.get_Request().get_ContentType()))
+			if (string.IsNullOrEmpty(base.Context.Request.ContentType))
 			{
-				base.Context.get_Request().set_ContentType(FormContentType);
+				base.Context.Request.ContentType = FormContentType;
 			}
 		}
 
@@ -152,16 +150,15 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			if (IsSendRequest)
 			{
 				await ProcessSendRequest().PreserveCulture();
+				return;
 			}
-			else if (IsAbortRequest)
+			if (IsAbortRequest)
 			{
 				await Connection.Abort(ConnectionId).PreserveCulture();
+				return;
 			}
-			else
-			{
-				await InitializePersistentState().PreserveCulture();
-				await ProcessReceiveRequest(connection).PreserveCulture();
-			}
+			await InitializePersistentState().PreserveCulture();
+			await ProcessReceiveRequest(connection).PreserveCulture();
 		}
 
 		public virtual Task ProcessRequest(ITransportConnection connection)
@@ -179,7 +176,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		protected internal virtual Task InitializeResponse(ITransportConnection connection)
 		{
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+			return TaskAsyncHelper.Empty;
 		}
 
 		protected void OnError(Exception ex)
@@ -190,7 +187,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		protected virtual async Task ProcessSendRequest()
 		{
-			string arg = StringValues.op_Implicit((await Context.get_Request().ReadFormAsync(default(CancellationToken)).PreserveCulture()).get_Item("data"));
+			string arg = (await Context.Request.ReadFormAsync().PreserveCulture())["data"];
 			if (Received != null)
 			{
 				await Received(arg).PreserveCulture();
@@ -199,38 +196,38 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		private Task ProcessReceiveRequest(ITransportConnection connection)
 		{
-			Func<Task> initialize2 = null;
+			Func<Task> initialize = null;
 			ITrackingConnection oldConnection = base.Heartbeat.AddOrUpdateConnection(this);
 			bool flag = oldConnection == null;
 			if (base.IsConnectRequest)
 			{
-				if (_protocolResolver.SupportsDelayedStart(base.Context.get_Request()))
+				if (_protocolResolver.SupportsDelayedStart(base.Context.Request))
 				{
-					initialize2 = (() => connection.Initialize(base.ConnectionId));
+					initialize = () => connection.Initialize(base.ConnectionId);
 				}
 				else
 				{
 					Func<Task> connected;
 					if (flag)
 					{
-						connected = (Connected ?? TransportDisconnectBase._emptyTaskFunc);
+						connected = Connected ?? TransportDisconnectBase._emptyTaskFunc;
 						_counters.ConnectionsConnected.Increment();
 					}
 					else
 					{
-						connected = (() => oldConnection.ConnectTask);
+						connected = () => oldConnection.ConnectTask;
 					}
-					Func<Task> initialize = () => connected().Then((ITransportConnection conn, string id) => conn.Initialize(id), connection, base.ConnectionId);
+					initialize = () => connected().Then((ITransportConnection conn, string id) => conn.Initialize(id), connection, base.ConnectionId);
 				}
 			}
 			else if (!SuppressReconnect)
 			{
-				initialize2 = Reconnected;
+				initialize = Reconnected;
 				_counters.ConnectionsReconnected.Increment();
 			}
-			initialize2 = (initialize2 ?? TransportDisconnectBase._emptyTaskFunc);
-			Func<Task> initialize3 = () => initialize2().ContinueWith(_connectTcs);
-			return ProcessMessages(connection, initialize3);
+			initialize = initialize ?? TransportDisconnectBase._emptyTaskFunc;
+			Func<Task> initialize2 = () => initialize().ContinueWith(_connectTcs);
+			return ProcessMessages(connection, initialize2);
 		}
 
 		private Task ProcessMessages(ITransportConnection connection, Func<Task> initialize)
@@ -278,7 +275,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 		private static void Cancel(object state)
 		{
 			ForeverTransportContext foreverTransportContext = (ForeverTransportContext)state;
-			LoggerExtensions.LogDebug(foreverTransportContext.Transport.Logger, "Cancel(" + foreverTransportContext.Transport.ConnectionId + ")", Array.Empty<object>());
+			foreverTransportContext.Transport.Logger.LogDebug("Cancel(" + foreverTransportContext.Transport.ConnectionId + ")");
 			((IDisposable)foreverTransportContext.State).Dispose();
 		}
 
@@ -294,32 +291,32 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 				_busRegistration.Dispose();
 				if (response.Aborted)
 				{
-					return Abort().Then(() => Microsoft.AspNetCore.SignalR.TaskAsyncHelper.False);
+					return Abort().Then(() => TaskAsyncHelper.False);
 				}
 			}
 			if (response.Terminal)
 			{
 				_transportLifetime.Complete();
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.False;
+				return TaskAsyncHelper.False;
 			}
-			return Send(response).Then(() => Microsoft.AspNetCore.SignalR.TaskAsyncHelper.True);
+			return Send(response).Then(() => TaskAsyncHelper.True);
 		}
 
-		private static Task PerformSend(object state)
+		private static async Task PerformSend(object state)
 		{
 			ForeverTransportContext foreverTransportContext = (ForeverTransportContext)state;
 			if (!foreverTransportContext.Transport.IsAlive)
 			{
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+				return;// TaskAsyncHelper.Empty;
 			}
-			foreverTransportContext.Transport.Context.get_Response().set_ContentType(JsonUtility.JsonMimeType);
+			foreverTransportContext.Transport.Context.Response.ContentType = JsonUtility.JsonMimeType;
 			using (BinaryMemoryPoolTextWriter binaryMemoryPoolTextWriter = new BinaryMemoryPoolTextWriter(foreverTransportContext.Transport.Pool))
 			{
 				foreverTransportContext.Transport.JsonSerializer.Serialize(foreverTransportContext.State, binaryMemoryPoolTextWriter);
 				binaryMemoryPoolTextWriter.Flush();
-				foreverTransportContext.Transport.Context.get_Response().Write(binaryMemoryPoolTextWriter.Buffer);
+				await foreverTransportContext.Transport.Context.Response.WriteAsync(binaryMemoryPoolTextWriter.Buffer);
 			}
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+			return;// TaskAsyncHelper.Empty;
 		}
 	}
 }

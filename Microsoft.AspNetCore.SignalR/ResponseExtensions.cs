@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Http;
 using System;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Microsoft.AspNetCore.SignalR
 {
@@ -9,20 +9,25 @@ namespace Microsoft.AspNetCore.SignalR
 	{
 		public static void Write(this HttpResponse response, ArraySegment<byte> data)
 		{
-			response.get_Body().Write(data.Array, data.Offset, data.Count);
+			response.Body.Write(data.Array, data.Offset, data.Count);
 		}
 
-		public static Task Flush(this HttpResponse response)
+        public static Task WriteAsync(this HttpResponse response, ArraySegment<byte> data)
+        {
+            return response.Body.WriteAsync(data.Array, data.Offset, data.Count);
+        }
+
+        public static Task Flush(this HttpResponse response)
 		{
-			return response.get_Body().FlushAsync();
+			return response.Body.FlushAsync();
 		}
 
-		public static Task End(this HttpResponse response, string data)
+		public static async Task End(this HttpResponse response, string data)
 		{
 			byte[] bytes = Encoding.UTF8.GetBytes(data);
-			response.set_ContentLength((long?)bytes.Length);
-			response.get_Body().Write(bytes, 0, bytes.Length);
-			return response.get_Body().FlushAsync();
+			response.ContentLength = bytes.Length;
+			await response.Body.WriteAsync(bytes, 0, bytes.Length);
+			await response.Body.FlushAsync();
 		}
 	}
 }

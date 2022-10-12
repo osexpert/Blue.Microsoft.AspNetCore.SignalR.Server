@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.SignalR.Infrastructure;
-using Newtonsoft.Json;
 using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Microsoft.AspNetCore.SignalR.Infrastructure;
+using Newtonsoft.Json;
 
 namespace Microsoft.AspNetCore.SignalR.Json
 {
@@ -15,9 +15,9 @@ namespace Microsoft.AspNetCore.SignalR.Json
 			{
 				throw new ArgumentNullException("serializer");
 			}
-			using (StringReader stringReader = new StringReader(json))
+			using (StringReader reader = new StringReader(json))
 			{
-				return (T)serializer.Deserialize((TextReader)stringReader, typeof(T));
+				return (T)serializer.Deserialize(reader, typeof(T));
 			}
 		}
 
@@ -27,9 +27,9 @@ namespace Microsoft.AspNetCore.SignalR.Json
 			{
 				throw new ArgumentNullException("serializer");
 			}
-			using (ArraySegmentTextReader arraySegmentTextReader = new ArraySegmentTextReader(jsonBuffer, encoding))
+			using (ArraySegmentTextReader reader = new ArraySegmentTextReader(jsonBuffer, encoding))
 			{
-				return (T)serializer.Deserialize((TextReader)arraySegmentTextReader, typeof(T));
+				return (T)serializer.Deserialize(reader, typeof(T));
 			}
 		}
 

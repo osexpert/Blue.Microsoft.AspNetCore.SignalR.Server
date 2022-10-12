@@ -6,7 +6,7 @@ namespace Microsoft.AspNetCore.SignalR
 {
 	internal static class Resources
 	{
-		private static readonly ResourceManager _resourceManager = new ResourceManager("Microsoft.AspNetCore.SignalR.Server.Resources", typeof(Resources).GetTypeInfo().get_Assembly());
+		private static readonly ResourceManager _resourceManager = new ResourceManager("Microsoft.AspNetCore.SignalR.Server.Resources", typeof(Resources).GetTypeInfo().Assembly);
 
 		internal static string DynamicComment_CallsMethodOnServerSideDeferredPromise => GetString("DynamicComment_CallsMethodOnServerSideDeferredPromise");
 

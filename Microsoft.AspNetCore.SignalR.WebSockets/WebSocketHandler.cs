@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.SignalR.Infrastructure;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR.Infrastructure;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.AspNetCore.SignalR.WebSockets
 {
@@ -120,7 +120,7 @@ namespace Microsoft.AspNetCore.SignalR.WebSockets
 		{
 			if (GetWebSocketState(WebSocket) != WebSocketState.Open)
 			{
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+				return TaskAsyncHelper.Empty;
 			}
 			SendContext state2 = new SendContext(this, message, messageType, endOfMessage);
 			return _sendQueue.Enqueue(async delegate(object state)
@@ -134,7 +134,7 @@ namespace Microsoft.AspNetCore.SignalR.WebSockets
 					}
 					catch (Exception arg)
 					{
-						LoggerExtensions.LogError(_logger, "Error while sending: " + arg, Array.Empty<object>());
+						_logger.LogError("Error while sending: " + arg);
 					}
 				}
 			}, state2);
@@ -144,7 +144,7 @@ namespace Microsoft.AspNetCore.SignalR.WebSockets
 		{
 			if (IsClosedOrClosedSent(WebSocket))
 			{
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+				return TaskAsyncHelper.Empty;
 			}
 			CloseContext state2 = new CloseContext(this);
 			return _sendQueue.Enqueue(async delegate(object state)
@@ -158,7 +158,7 @@ namespace Microsoft.AspNetCore.SignalR.WebSockets
 					}
 					catch (Exception arg)
 					{
-						LoggerExtensions.LogError(_logger, "Error while closing the websocket: " + arg, Array.Empty<object>());
+						_logger.LogError("Error while closing the websocket: " + arg);
 					}
 				}
 			}, state2);
@@ -192,15 +192,13 @@ namespace Microsoft.AspNetCore.SignalR.WebSockets
 					{
 					case WebSocketMessageType.Binary:
 						OnMessage((byte[])webSocketMessage.Data);
-						break;
+						continue;
 					case WebSocketMessageType.Text:
 						OnMessage((string)webSocketMessage.Data);
-						break;
-					default:
-						closedReceived = true;
-						await Task.WhenAny(CloseAsync(), Task.Delay(_closeTimeout)).PreserveCulture();
-						break;
+						continue;
 					}
+					closedReceived = true;
+					await Task.WhenAny(CloseAsync(), Task.Delay(_closeTimeout)).PreserveCulture();
 				}
 			}
 			catch (OperationCanceledException error)

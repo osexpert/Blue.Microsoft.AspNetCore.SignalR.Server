@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.SignalR.Json;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.SignalR.Json;
 
 namespace Microsoft.AspNetCore.SignalR.Hubs
 {

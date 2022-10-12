@@ -1,6 +1,6 @@
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Infrastructure;
 using Microsoft.AspNetCore.SignalR.Messaging;
-using System.Threading.Tasks;
 
 namespace Microsoft.AspNetCore.SignalR.Transports
 {

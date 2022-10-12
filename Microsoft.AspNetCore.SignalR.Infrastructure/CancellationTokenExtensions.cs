@@ -66,7 +66,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 				InvokeCallback(s);
 			}, cancellationCallbackWrapper);
 			DiposeCancellationState state2 = new DiposeCancellationState(cancellationCallbackWrapper, registration);
-			return new Microsoft.AspNetCore.SignalR.Infrastructure.DisposableAction(delegate(object s)
+			return new DisposableAction(delegate(object s)
 			{
 				Dispose(s);
 			}, state2);

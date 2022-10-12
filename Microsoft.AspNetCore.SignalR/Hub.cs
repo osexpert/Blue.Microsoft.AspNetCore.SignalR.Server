@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.SignalR.Hubs;
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR.Hubs;
 
 namespace Microsoft.AspNetCore.SignalR
 {
@@ -31,17 +31,17 @@ namespace Microsoft.AspNetCore.SignalR
 
 		public virtual Task OnDisconnected(bool stopCalled)
 		{
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+			return TaskAsyncHelper.Empty;
 		}
 
 		public virtual Task OnConnected()
 		{
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+			return TaskAsyncHelper.Empty;
 		}
 
 		public virtual Task OnReconnected()
 		{
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+			return TaskAsyncHelper.Empty;
 		}
 
 		protected virtual void Dispose(bool disposing)

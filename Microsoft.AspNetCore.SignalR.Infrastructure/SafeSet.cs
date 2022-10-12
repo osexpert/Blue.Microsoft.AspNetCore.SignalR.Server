@@ -22,8 +22,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 
 		public SafeSet(IEnumerable<T> items)
 		{
-			_items = new ConcurrentDictionary<T, object>(from x in items
-			select new KeyValuePair<T, object>(x, null));
+			_items = new ConcurrentDictionary<T, object>(items.Select((T x) => new KeyValuePair<T, object>(x, null)));
 		}
 
 		public ICollection<T> GetSnapshot()

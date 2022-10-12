@@ -1,10 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using Microsoft.AspNetCore.SignalR.Infrastructure;
 using Microsoft.AspNetCore.SignalR.Json;
 using Microsoft.AspNetCore.SignalR.Messaging;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
 
 namespace Microsoft.AspNetCore.SignalR.Transports
 {
@@ -77,14 +77,12 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		void IJsonWritable.WriteJson(TextWriter writer)
 		{
-			//IL_000f: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0015: Expected O, but got Unknown
 			if (writer == null)
 			{
 				throw new ArgumentNullException("writer");
 			}
-			JsonTextWriter val = new JsonTextWriter(writer);
-			val.WriteStartObject();
+			JsonTextWriter jsonTextWriter = new JsonTextWriter(writer);
+			jsonTextWriter.WriteStartObject();
 			writer.Write('"');
 			writer.Write("C");
 			writer.Write('"');
@@ -95,59 +93,61 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			writer.Write(',');
 			if (Initializing)
 			{
-				val.WritePropertyName("S");
-				val.WriteValue(1);
+				jsonTextWriter.WritePropertyName("S");
+				jsonTextWriter.WriteValue(1);
 			}
 			if (Reconnect)
 			{
-				val.WritePropertyName("T");
-				val.WriteValue(1);
+				jsonTextWriter.WritePropertyName("T");
+				jsonTextWriter.WriteValue(1);
 			}
 			if (GroupsToken != null)
 			{
-				val.WritePropertyName("G");
-				val.WriteValue(GroupsToken);
+				jsonTextWriter.WritePropertyName("G");
+				jsonTextWriter.WriteValue(GroupsToken);
 			}
 			if (LongPollDelay.HasValue)
 			{
-				val.WritePropertyName("L");
-				val.WriteValue(LongPollDelay.Value);
+				jsonTextWriter.WritePropertyName("L");
+				jsonTextWriter.WriteValue(LongPollDelay.Value);
 			}
-			val.WritePropertyName("M");
-			val.WriteStartArray();
-			WriteMessages(writer, val);
-			val.WriteEndArray();
-			val.WriteEndObject();
+			jsonTextWriter.WritePropertyName("M");
+			jsonTextWriter.WriteStartArray();
+			WriteMessages(writer, jsonTextWriter);
+			jsonTextWriter.WriteEndArray();
+			jsonTextWriter.WriteEndObject();
 		}
 
 		private void WriteMessages(TextWriter writer, JsonTextWriter jsonWriter)
 		{
-			if (Messages != null)
+			if (Messages == null)
 			{
-				IBinaryWriter binaryWriter = writer as IBinaryWriter;
-				bool flag = true;
-				for (int i = 0; i < Messages.Count; i++)
+				return;
+			}
+			IBinaryWriter binaryWriter = writer as IBinaryWriter;
+			bool flag = true;
+			for (int i = 0; i < Messages.Count; i++)
+			{
+				ArraySegment<Message> arraySegment = Messages[i];
+				for (int j = arraySegment.Offset; j < arraySegment.Offset + arraySegment.Count; j++)
 				{
-					ArraySegment<Message> arraySegment = Messages[i];
-					for (int j = arraySegment.Offset; j < arraySegment.Offset + arraySegment.Count; j++)
+					Message message = arraySegment.Array[j];
+					if (message.IsCommand || _exclude(message))
 					{
-						Message message = arraySegment.Array[j];
-						if (!message.IsCommand && !_exclude(message))
+						continue;
+					}
+					if (binaryWriter != null)
+					{
+						if (!flag)
 						{
-							if (binaryWriter != null)
-							{
-								if (!flag)
-								{
-									writer.Write(',');
-								}
-								binaryWriter.Write(message.Value);
-								flag = false;
-							}
-							else
-							{
-								jsonWriter.WriteRawValue(message.GetString());
-							}
+							writer.Write(',');
 						}
+						binaryWriter.Write(message.Value);
+						flag = false;
+					}
+					else
+					{
+						jsonWriter.WriteRawValue(message.GetString());
 					}
 				}
 			}

@@ -1,9 +1,9 @@
+using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System;
-using System.Threading.Tasks;
 
 namespace Microsoft.AspNetCore.SignalR.Hosting
 {
@@ -31,11 +31,11 @@ namespace Microsoft.AspNetCore.SignalR.Hosting
 			{
 				throw new ArgumentNullException("context");
 			}
-			if (JsonUtility.TryRejectJSONPRequest(_optionsAccessor.get_Value(), context))
+			if (JsonUtility.TryRejectJSONPRequest(_optionsAccessor.Value, context))
 			{
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+				return TaskAsyncHelper.Empty;
 			}
-			PersistentConnection obj = ActivatorUtilities.CreateInstance(_serviceProvider, _connectionType, Array.Empty<object>()) as PersistentConnection;
+			PersistentConnection obj = ActivatorUtilities.CreateInstance(_serviceProvider, _connectionType) as PersistentConnection;
 			obj.Initialize(_serviceProvider);
 			return obj.ProcessRequest(context);
 		}

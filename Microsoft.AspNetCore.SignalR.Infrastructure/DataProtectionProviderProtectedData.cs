@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.DataProtection;
 using System;
 using System.Text;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Microsoft.AspNetCore.SignalR.Infrastructure
 {
@@ -35,22 +35,22 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 		public string Unprotect(string protectedValue, string purpose)
 		{
 			IDataProtector dataProtector = GetDataProtector(purpose);
-			byte[] array = Convert.FromBase64String(protectedValue);
-			byte[] array2 = dataProtector.Unprotect(array);
-			return _encoding.GetString(array2, 0, array2.Length);
+			byte[] protectedData = Convert.FromBase64String(protectedValue);
+			byte[] array = dataProtector.Unprotect(protectedData);
+			return _encoding.GetString(array, 0, array.Length);
 		}
 
 		private IDataProtector GetDataProtector(string purpose)
 		{
-			if (purpose == "SignalR.ConnectionToken")
+			if (!(purpose == "SignalR.ConnectionToken"))
 			{
-				return _connectionTokenProtector;
+				if (purpose == "SignalR.Groups.v1.1")
+				{
+					return _groupsProtector;
+				}
+				return _provider.CreateProtector(purpose);
 			}
-			if (purpose == "SignalR.Groups.v1.1")
-			{
-				return _groupsProtector;
-			}
-			return _provider.CreateProtector(purpose);
+			return _connectionTokenProtector;
 		}
 	}
 }

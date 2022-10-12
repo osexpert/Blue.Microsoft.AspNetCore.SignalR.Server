@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.SignalR.Hubs;
 using System;
+using Microsoft.AspNetCore.SignalR.Hubs;
 
 namespace Microsoft.AspNetCore.SignalR.Infrastructure
 {

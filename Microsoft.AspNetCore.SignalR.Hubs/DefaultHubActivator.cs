@@ -1,5 +1,5 @@
-using Microsoft.Extensions.DependencyInjection;
 using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.AspNetCore.SignalR.Hubs
 {
@@ -22,7 +22,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			{
 				return null;
 			}
-			return ActivatorUtilities.CreateInstance(_serviceProvider, descriptor.HubType, Array.Empty<object>()) as IHub;
+			return ActivatorUtilities.CreateInstance(_serviceProvider, descriptor.HubType) as IHub;
 		}
 	}
 }

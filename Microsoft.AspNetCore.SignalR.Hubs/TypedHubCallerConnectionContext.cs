@@ -6,9 +6,9 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 	{
 		private IHubCallerConnectionContext<dynamic> _dynamicContext;
 
-		public TClient Caller => (TClient)TypedClientBuilder<TClient>.Build(_dynamicContext.Caller);
+		public TClient Caller => TypedClientBuilder<TClient>.Build(_dynamicContext.Caller);
 
-		public TClient Others => (TClient)TypedClientBuilder<TClient>.Build(_dynamicContext.Others);
+		public TClient Others => TypedClientBuilder<TClient>.Build(_dynamicContext.Others);
 
 		public TypedHubCallerConnectionContext(IHubCallerConnectionContext<dynamic> dynamicContext)
 			: base((IHubConnectionContext<dynamic>)dynamicContext)
@@ -18,12 +18,12 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		public TClient OthersInGroup(string groupName)
 		{
-			return (TClient)TypedClientBuilder<TClient>.Build(_dynamicContext.OthersInGroup(groupName));
+			return TypedClientBuilder<TClient>.Build(_dynamicContext.OthersInGroup(groupName));
 		}
 
 		public TClient OthersInGroups(IList<string> groupNames)
 		{
-			return (TClient)TypedClientBuilder<TClient>.Build(_dynamicContext.OthersInGroups(groupNames));
+			return TypedClientBuilder<TClient>.Build(_dynamicContext.OthersInGroups(groupNames));
 		}
 	}
 }

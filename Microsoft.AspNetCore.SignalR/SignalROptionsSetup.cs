@@ -1,6 +1,6 @@
+using System;
 using Microsoft.AspNetCore.SignalR.Hubs;
 using Microsoft.Extensions.Options;
-using System;
 
 namespace Microsoft.AspNetCore.SignalR
 {

@@ -1,11 +1,10 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR.Infrastructure;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.AspNetCore.SignalR.Transports
 {
@@ -27,7 +26,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		protected string _lastMessageId;
 
-		internal static readonly Func<Task> _emptyTaskFunc = () => Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+		internal static readonly Func<Task> _emptyTaskFunc = () => TaskAsyncHelper.Empty;
 
 		internal TaskCompletionSource<object> _connectTcs;
 
@@ -35,7 +34,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		private SafeCancellationTokenSource _connectionEndTokenSource;
 
-		private Task _lastWriteTask = Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+		private Task _lastWriteTask = TaskAsyncHelper.Empty;
 
 		private readonly CancellationToken _hostShutdownToken;
 
@@ -103,11 +102,11 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		public virtual TimeSpan DisconnectThreshold => TimeSpan.FromSeconds(5.0);
 
-		protected bool IsConnectRequest => Context.get_Request().LocalPath().EndsWith("/connect", StringComparison.OrdinalIgnoreCase);
+		protected bool IsConnectRequest => Context.Request.LocalPath().EndsWith("/connect", StringComparison.OrdinalIgnoreCase);
 
-		protected bool IsSendRequest => Context.get_Request().LocalPath().EndsWith("/send", StringComparison.OrdinalIgnoreCase);
+		protected bool IsSendRequest => Context.Request.LocalPath().EndsWith("/send", StringComparison.OrdinalIgnoreCase);
 
-		protected bool IsAbortRequest => Context.get_Request().LocalPath().EndsWith("/abort", StringComparison.OrdinalIgnoreCase);
+		protected bool IsAbortRequest => Context.Request.LocalPath().EndsWith("/abort", StringComparison.OrdinalIgnoreCase);
 
 		protected virtual bool SuppressReconnect => false;
 
@@ -147,25 +146,21 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			_context = context;
 			_heartbeat = heartbeat;
 			_counters = performanceCounterManager;
-			_hostShutdownToken = applicationLifetime.get_ApplicationStopping();
-			_requestAborted = context.get_RequestAborted();
+			_hostShutdownToken = applicationLifetime.ApplicationStopping;
+			_requestAborted = context.RequestAborted;
 			WriteQueue = new Microsoft.AspNetCore.SignalR.Infrastructure.TaskQueue();
 			_logger = loggerFactory.CreateLogger(GetType().FullName);
 		}
 
 		protected virtual Task InitializeMessageId()
 		{
-			//IL_0016: Unknown result type (might be due to invalid IL or missing references)
-			_lastMessageId = StringValues.op_Implicit(Context.get_Request().get_Query().get_Item("messageId"));
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+			_lastMessageId = Context.Request.Query["messageId"];
+			return TaskAsyncHelper.Empty;
 		}
 
 		public virtual Task<string> GetGroupsToken()
 		{
-			//IL_0015: Unknown result type (might be due to invalid IL or missing references)
-			//IL_001a: Unknown result type (might be due to invalid IL or missing references)
-			StringValues val = Context.get_Request().get_Query().get_Item("groupsToken");
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.FromResult(((object)val).ToString());
+			return TaskAsyncHelper.FromResult(Context.Request.Query["groupsToken"].ToString());
 		}
 
 		protected void IncrementErrors()
@@ -200,10 +195,10 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			{
 				ApplyState(TransportConnectionStates.Disconnected);
 			}
-			LoggerExtensions.LogInformation(Logger, "Abort(" + ConnectionId + ")", Array.Empty<object>());
+			Logger.LogInformation("Abort(" + ConnectionId + ")");
 			Heartbeat.RemoveConnection(this);
 			End();
-			return ((Disconnected != null) ? Disconnected(clean) : Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty).Catch(delegate(AggregateException ex, object state)
+			return ((Disconnected != null) ? Disconnected(clean) : TaskAsyncHelper.Empty).Catch(delegate(AggregateException ex, object state)
 			{
 				OnDisconnectError(ex, state);
 			}, Logger, Logger).Finally(delegate(object state)
@@ -221,21 +216,21 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 		{
 			if (Interlocked.Exchange(ref _timedOut, 1) == 0)
 			{
-				LoggerExtensions.LogInformation(Logger, "Timeout(" + ConnectionId + ")", Array.Empty<object>());
+				Logger.LogInformation("Timeout(" + ConnectionId + ")");
 				End();
 			}
 		}
 
 		public virtual Task KeepAlive()
 		{
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+			return TaskAsyncHelper.Empty;
 		}
 
 		public void End()
 		{
 			if (Interlocked.Exchange(ref _ended, 1) == 0)
 			{
-				LoggerExtensions.LogInformation(Logger, "End(" + ConnectionId + ")", Array.Empty<object>());
+				Logger.LogInformation("End(" + ConnectionId + ")");
 				if (_connectionEndTokenSource != null)
 				{
 					_connectionEndTokenSource.Cancel();
@@ -269,7 +264,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 		{
 			if (!IsAlive)
 			{
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+				return TaskAsyncHelper.Empty;
 			}
 			return _lastWriteTask = WriteQueue.Enqueue(writeAsync, state);
 		}
@@ -293,9 +288,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		private static void OnDisconnectError(AggregateException ex, object state)
 		{
-			//IL_0001: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0020: Expected O, but got Unknown
-			LoggerExtensions.LogError(state, "Failed to raise disconnect: " + ex.GetBaseException(), Array.Empty<object>());
+			((ILogger)state).LogError("Failed to raise disconnect: " + ex.GetBaseException());
 		}
 	}
 }

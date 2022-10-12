@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.SignalR.Infrastructure;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR.Infrastructure;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.AspNetCore.SignalR
 {
@@ -252,16 +252,12 @@ namespace Microsoft.AspNetCore.SignalR
 			task.ContinueWithPreservedCulture(delegate(Task innerTask)
 			{
 				ExecuteOnFaulted(handler, state, innerTask.Exception, logger);
-			}, TaskContinuationOptions.NotOnRanToCompletion | TaskContinuationOptions.NotOnCanceled | TaskContinuationOptions.ExecuteSynchronously);
+			}, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
 		}
 
 		private static void ExecuteOnFaulted(Action<AggregateException, object> handler, object state, AggregateException exception, ILogger logger)
 		{
-			//IL_0005: Unknown result type (might be due to invalid IL or missing references)
-			if (logger != null)
-			{
-				LoggerExtensions.LogWarning(logger, EventId.op_Implicit(0), (Exception)exception, "Exception thrown by Task", Array.Empty<object>());
-			}
+			logger?.LogWarning(0, exception, "Exception thrown by Task");
 			handler(exception, state);
 		}
 

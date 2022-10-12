@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR.Configuration;
@@ -10,11 +15,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Microsoft.AspNetCore.SignalR
 {
@@ -37,7 +37,7 @@ namespace Microsoft.AspNetCore.SignalR
 
 		private ITransportManager _transportManager;
 
-		protected virtual ILogger Logger => LoggerFactoryExtensions.CreateLogger<PersistentConnection>(LoggerFactory);
+		protected virtual ILogger Logger => LoggerFactory.CreateLogger<PersistentConnection>();
 
 		protected IProtectedData ProtectedData
 		{
@@ -113,17 +113,17 @@ namespace Microsoft.AspNetCore.SignalR
 
 		public virtual void Initialize(IServiceProvider serviceProvider)
 		{
-			MessageBus = ServiceProviderServiceExtensions.GetRequiredService<IMessageBus>(serviceProvider);
-			JsonSerializer = ServiceProviderServiceExtensions.GetRequiredService<JsonSerializer>(serviceProvider);
-			LoggerFactory = ServiceProviderServiceExtensions.GetRequiredService<ILoggerFactory>(serviceProvider);
-			Counters = ServiceProviderServiceExtensions.GetRequiredService<IPerformanceCounterManager>(serviceProvider);
-			AckHandler = ServiceProviderServiceExtensions.GetRequiredService<IAckHandler>(serviceProvider);
-			ProtectedData = ServiceProviderServiceExtensions.GetRequiredService<IProtectedData>(serviceProvider);
-			UserIdProvider = ServiceProviderServiceExtensions.GetRequiredService<IUserIdProvider>(serviceProvider);
-			Pool = ServiceProviderServiceExtensions.GetRequiredService<IMemoryPool>(serviceProvider);
-			_options = ServiceProviderServiceExtensions.GetRequiredService<IOptions<SignalROptions>>(serviceProvider).get_Value();
-			_transportManager = ServiceProviderServiceExtensions.GetRequiredService<ITransportManager>(serviceProvider);
-			ServiceProviderServiceExtensions.GetRequiredService<AckSubscriber>(serviceProvider);
+			MessageBus = serviceProvider.GetRequiredService<IMessageBus>();
+			JsonSerializer = serviceProvider.GetRequiredService<JsonSerializer>();
+			LoggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+			Counters = serviceProvider.GetRequiredService<IPerformanceCounterManager>();
+			AckHandler = serviceProvider.GetRequiredService<IAckHandler>();
+			ProtectedData = serviceProvider.GetRequiredService<IProtectedData>();
+			UserIdProvider = serviceProvider.GetRequiredService<IUserIdProvider>();
+			Pool = serviceProvider.GetRequiredService<IMemoryPool>();
+			_options = serviceProvider.GetRequiredService<IOptions<SignalROptions>>().Value;
+			_transportManager = serviceProvider.GetRequiredService<ITransportManager>();
+			serviceProvider.GetRequiredService<AckSubscriber>();
 		}
 
 		public bool Authorize(HttpRequest request)
@@ -133,26 +133,25 @@ namespace Microsoft.AspNetCore.SignalR
 
 		public Task ProcessRequest(HttpContext context)
 		{
-			//IL_002a: Unknown result type (might be due to invalid IL or missing references)
 			if (context == null)
 			{
 				throw new ArgumentNullException("context");
 			}
-			HttpResponse response = context.get_Response();
-			context.get_Response().get_Headers().set_Item("X-Content-Type-Options", StringValues.op_Implicit("nosniff"));
-			if (AuthorizeRequest(context.get_Request()))
+			HttpResponse response = context.Response;
+			context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+			if (AuthorizeRequest(context.Request))
 			{
 				return ProcessRequestCore(context);
 			}
-			if (context.get_User() != null && context.get_User().Identity.IsAuthenticated)
+			if (context.User != null && context.User.Identity.IsAuthenticated)
 			{
-				response.set_StatusCode(403);
+				response.StatusCode = 403;
 			}
 			else
 			{
-				response.set_StatusCode(401);
+				response.StatusCode = 401;
 			}
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+			return TaskAsyncHelper.Empty;
 		}
 
 		public virtual async Task ProcessRequestCore(HttpContext context)
@@ -161,66 +160,57 @@ namespace Microsoft.AspNetCore.SignalR
 			{
 				throw new ArgumentNullException("context");
 			}
-			if (IsNegotiationRequest(context.get_Request()))
+			if (IsNegotiationRequest(context.Request))
 			{
 				await ProcessNegotiationRequest(context).PreserveCulture();
+				return;
 			}
-			else if (IsPingRequest(context.get_Request()))
+			if (IsPingRequest(context.Request))
 			{
 				await ProcessPingRequest(context).PreserveCulture();
+				return;
 			}
-			else
+			Transport = GetTransport(context);
+			if (Transport == null)
 			{
-				Transport = GetTransport(context);
-				if (Transport == null)
-				{
-					await FailResponse(context.get_Response(), string.Format(CultureInfo.CurrentCulture, Resources.Error_ProtocolErrorUnknownTransport)).PreserveCulture();
-				}
-				else
-				{
-					string connectionToken = StringValues.op_Implicit(context.get_Request().get_Query().get_Item("connectionToken"));
-					string connectionId;
-					string message;
-					int statusCode;
-					if (string.IsNullOrEmpty(connectionToken))
-					{
-						await FailResponse(context.get_Response(), string.Format(CultureInfo.CurrentCulture, Resources.Error_ProtocolErrorMissingConnectionToken)).PreserveCulture();
-					}
-					else if (!TryGetConnectionId(context, connectionToken, out connectionId, out message, out statusCode))
-					{
-						await FailResponse(context.get_Response(), message, statusCode).PreserveCulture();
-					}
-					else
-					{
-						Transport.ConnectionId = connectionId;
-						string userId = UserIdProvider.GetUserId(context.get_Request());
-						string groupsToken = await Transport.GetGroupsToken().PreserveCulture();
-						IList<string> signals = GetSignals(userId, connectionId);
-						IList<string> groups = AppendGroupPrefixes(context, connectionId, groupsToken);
-						Connection connection = (Connection)(Connection = CreateConnection(connectionId, signals, groups));
-						string persistentConnectionGroupName = PrefixHelper.GetPersistentConnectionGroupName(DefaultSignalRaw);
-						Groups = new GroupManager(connection, persistentConnectionGroupName);
-						if (IsStartRequest(context.get_Request()))
-						{
-							await ProcessStartRequest(context, connectionId).PreserveCulture();
-						}
-						else
-						{
-							Transport.Connected = (() => Microsoft.AspNetCore.SignalR.TaskAsyncHelper.FromMethod(() => OnConnected(context.get_Request(), connectionId).OrEmpty()));
-							Transport.Reconnected = (() => Microsoft.AspNetCore.SignalR.TaskAsyncHelper.FromMethod(() => OnReconnected(context.get_Request(), connectionId).OrEmpty()));
-							Transport.Received = delegate(string data)
-							{
-								Counters.ConnectionMessagesSentTotal.Increment();
-								Counters.ConnectionMessagesSentPerSec.Increment();
-								return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.FromMethod(() => OnReceived(context.get_Request(), connectionId, data).OrEmpty());
-							};
-							Transport.Disconnected = ((bool clean) => Microsoft.AspNetCore.SignalR.TaskAsyncHelper.FromMethod(() => OnDisconnected(context.get_Request(), connectionId, clean).OrEmpty()));
-							await Transport.ProcessRequest(connection).OrEmpty().Catch(Logger, Counters.ErrorsAllTotal, Counters.ErrorsAllPerSec)
-								.PreserveCulture();
-						}
-					}
-				}
+				await FailResponse(context.Response, string.Format(CultureInfo.CurrentCulture, Resources.Error_ProtocolErrorUnknownTransport)).PreserveCulture();
+				return;
 			}
+			string connectionToken = context.Request.Query["connectionToken"];
+			if (string.IsNullOrEmpty(connectionToken))
+			{
+				await FailResponse(context.Response, string.Format(CultureInfo.CurrentCulture, Resources.Error_ProtocolErrorMissingConnectionToken)).PreserveCulture();
+				return;
+			}
+			if (!TryGetConnectionId(context, connectionToken, out var connectionId, out var message, out var statusCode))
+			{
+				await FailResponse(context.Response, message, statusCode).PreserveCulture();
+				return;
+			}
+			Transport.ConnectionId = connectionId;
+			string userId = UserIdProvider.GetUserId(context.Request);
+			string groupsToken = await Transport.GetGroupsToken().PreserveCulture();
+			IList<string> signals = GetSignals(userId, connectionId);
+			IList<string> groups = AppendGroupPrefixes(context, connectionId, groupsToken);
+			Connection connection = (Connection)(Connection = CreateConnection(connectionId, signals, groups));
+			string persistentConnectionGroupName = PrefixHelper.GetPersistentConnectionGroupName(DefaultSignalRaw);
+			Groups = new GroupManager(connection, persistentConnectionGroupName);
+			if (IsStartRequest(context.Request))
+			{
+				await ProcessStartRequest(context, connectionId).PreserveCulture();
+				return;
+			}
+			Transport.Connected = () => TaskAsyncHelper.FromMethod(() => OnConnected(context.Request, connectionId).OrEmpty());
+			Transport.Reconnected = () => TaskAsyncHelper.FromMethod(() => OnReconnected(context.Request, connectionId).OrEmpty());
+			Transport.Received = delegate(string data)
+			{
+				Counters.ConnectionMessagesSentTotal.Increment();
+				Counters.ConnectionMessagesSentPerSec.Increment();
+				return TaskAsyncHelper.FromMethod(() => OnReceived(context.Request, connectionId, data).OrEmpty());
+			};
+			Transport.Disconnected = (bool clean) => TaskAsyncHelper.FromMethod(() => OnDisconnected(context.Request, connectionId, clean).OrEmpty());
+			await Transport.ProcessRequest(connection).OrEmpty().Catch(Logger, Counters.ErrorsAllTotal, Counters.ErrorsAllPerSec)
+				.PreserveCulture();
 		}
 
 		internal bool TryGetConnectionId(HttpContext context, string connectionToken, out string connectionId, out string message, out int statusCode)
@@ -235,7 +225,7 @@ namespace Microsoft.AspNetCore.SignalR
 			}
 			catch (Exception arg)
 			{
-				LoggerExtensions.LogInformation(Logger, $"Failed to process connectionToken {connectionToken}: {arg}", Array.Empty<object>());
+				Logger.LogInformation($"Failed to process connectionToken {connectionToken}: {arg}");
 			}
 			if (string.IsNullOrEmpty(text))
 			{
@@ -244,7 +234,7 @@ namespace Microsoft.AspNetCore.SignalR
 			}
 			string[] array = text.Split(SplitChars, 2);
 			connectionId = array[0];
-			string a = (array.Length > 1) ? array[1] : string.Empty;
+			string a = ((array.Length > 1) ? array[1] : string.Empty);
 			string userIdentity = GetUserIdentity(context);
 			if (!string.Equals(a, userIdentity, StringComparison.OrdinalIgnoreCase))
 			{
@@ -268,7 +258,7 @@ namespace Microsoft.AspNetCore.SignalR
 			}
 			catch (Exception arg)
 			{
-				LoggerExtensions.LogInformation(Logger, $"Failed to process groupsToken {groupsToken}: {arg}", Array.Empty<object>());
+				Logger.LogInformation($"Failed to process groupsToken {groupsToken}: {arg}");
 			}
 			if (string.IsNullOrEmpty(text))
 			{
@@ -276,7 +266,7 @@ namespace Microsoft.AspNetCore.SignalR
 			}
 			string[] array = text.Split(SplitChars, 2);
 			string a = array[0];
-			string json = (array.Length > 1) ? array[1] : string.Empty;
+			string json = ((array.Length > 1) ? array[1] : string.Empty);
 			if (!string.Equals(a, connectionId, StringComparison.OrdinalIgnoreCase))
 			{
 				return Microsoft.AspNetCore.SignalR.Infrastructure.ListHelper<string>.Empty;
@@ -286,8 +276,8 @@ namespace Microsoft.AspNetCore.SignalR
 
 		private IList<string> AppendGroupPrefixes(HttpContext context, string connectionId, string groupsToken)
 		{
-			return (from g in OnRejoiningGroups(context.get_Request(), VerifyGroups(connectionId, groupsToken), connectionId)
-			select GroupPrefix + g).ToList();
+			return (from g in OnRejoiningGroups(context.Request, VerifyGroups(connectionId, groupsToken), connectionId)
+				select GroupPrefix + g).ToList();
 		}
 
 		private Connection CreateConnection(string connectionId, IList<string> signals, IList<string> groups)
@@ -321,22 +311,22 @@ namespace Microsoft.AspNetCore.SignalR
 
 		protected virtual Task OnConnected(HttpRequest request, string connectionId)
 		{
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+			return TaskAsyncHelper.Empty;
 		}
 
 		protected virtual Task OnReconnected(HttpRequest request, string connectionId)
 		{
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+			return TaskAsyncHelper.Empty;
 		}
 
 		protected virtual Task OnReceived(HttpRequest request, string connectionId, string data)
 		{
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+			return TaskAsyncHelper.Empty;
 		}
 
 		protected virtual Task OnDisconnected(HttpRequest request, string connectionId, bool stopCalled)
 		{
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+			return TaskAsyncHelper.Empty;
 		}
 
 		private static Task ProcessPingRequest(HttpContext context)
@@ -351,14 +341,14 @@ namespace Microsoft.AspNetCore.SignalR
 			string data = text + ":" + GetUserIdentity(context);
 			var value = new
 			{
-				Url = context.get_Request().LocalPath().Replace("/negotiate", ""),
+				Url = context.Request.LocalPath().Replace("/negotiate", ""),
 				ConnectionToken = ProtectedData.Protect(data, "SignalR.ConnectionToken"),
 				ConnectionId = text,
 				KeepAliveTimeout = (timeSpan.HasValue ? new double?(timeSpan.Value.TotalSeconds) : null),
 				DisconnectTimeout = _options.Transports.DisconnectTimeout.TotalSeconds,
 				ConnectionTimeout = _options.Transports.LongPolling.PollTimeout.TotalSeconds,
-				TryWebSockets = (_transportManager.SupportsTransport("webSockets") && context.get_Features().Get<IHttpWebSocketFeature>() != null),
-				ProtocolVersion = _protocolResolver.Resolve(context.get_Request()).ToString(),
+				TryWebSockets = (_transportManager.SupportsTransport("webSockets") && context.Features.Get<IHttpWebSocketFeature>() != null),
+				ProtocolVersion = _protocolResolver.Resolve(context.Request).ToString(),
 				TransportConnectTimeout = _options.Transports.TransportConnectTimeout.TotalSeconds,
 				LongPollDelay = _options.Transports.LongPolling.PollDelay.TotalSeconds
 			};
@@ -367,40 +357,36 @@ namespace Microsoft.AspNetCore.SignalR
 
 		private async Task ProcessStartRequest(HttpContext context, string connectionId)
 		{
-			await OnConnected(context.get_Request(), connectionId).OrEmpty().PreserveCulture();
+			await OnConnected(context.Request, connectionId).OrEmpty().PreserveCulture();
 			await SendJsonResponse(context, "{ \"Response\": \"started\" }").PreserveCulture();
 			Counters.ConnectionsConnected.Increment();
 		}
 
 		private static Task SendJsonResponse(HttpContext context, string jsonPayload)
 		{
-			//IL_0010: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0015: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0016: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0040: Unknown result type (might be due to invalid IL or missing references)
-			StringValues val = context.get_Request().get_Query().get_Item("callback");
-			if (string.IsNullOrEmpty(StringValues.op_Implicit(val)))
+			StringValues values = context.Request.Query["callback"];
+			if (string.IsNullOrEmpty(values))
 			{
-				context.get_Response().set_ContentType(JsonUtility.JsonMimeType);
-				return context.get_Response().End(jsonPayload);
+				context.Response.ContentType = JsonUtility.JsonMimeType;
+				return context.Response.End(jsonPayload);
 			}
-			string data = JsonUtility.CreateJsonpCallback(StringValues.op_Implicit(val), jsonPayload);
-			context.get_Response().set_ContentType(JsonUtility.JavaScriptMimeType);
-			return context.get_Response().End(data);
+			string data = JsonUtility.CreateJsonpCallback(values, jsonPayload);
+			context.Response.ContentType = JsonUtility.JavaScriptMimeType;
+			return context.Response.End(data);
 		}
 
 		private static string GetUserIdentity(HttpContext context)
 		{
-			if (context.get_User() != null && context.get_User().Identity.IsAuthenticated)
+			if (context.User != null && context.User.Identity.IsAuthenticated)
 			{
-				return context.get_User().Identity.Name ?? string.Empty;
+				return context.User.Identity.Name ?? string.Empty;
 			}
 			return string.Empty;
 		}
 
 		private static Task FailResponse(HttpResponse response, string message, int statusCode = 400)
 		{
-			response.set_StatusCode(statusCode);
+			response.StatusCode = statusCode;
 			return response.End(message);
 		}
 

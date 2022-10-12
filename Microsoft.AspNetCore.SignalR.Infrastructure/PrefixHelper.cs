@@ -68,7 +68,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 		{
 			if (connectionIds.Count == 0)
 			{
-				return Microsoft.AspNetCore.SignalR.Infrastructure.ListHelper<string>.Empty;
+				return ListHelper<string>.Empty;
 			}
 			return connectionIds.Select(GetConnectionId).ToList();
 		}

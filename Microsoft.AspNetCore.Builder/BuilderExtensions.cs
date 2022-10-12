@@ -1,8 +1,7 @@
-using Microsoft.AspNetCore.Http;
+using System;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Hosting;
 using Microsoft.AspNetCore.SignalR.Hubs;
-using System;
 
 namespace Microsoft.AspNetCore.Builder
 {
@@ -15,8 +14,7 @@ namespace Microsoft.AspNetCore.Builder
 
 		public static IApplicationBuilder UseSignalR(this IApplicationBuilder builder, string path)
 		{
-			//IL_0002: Unknown result type (might be due to invalid IL or missing references)
-			return MapExtensions.Map(builder, PathString.op_Implicit(path), (Action<IApplicationBuilder>)delegate(IApplicationBuilder subApp)
+			return builder.Map(path, delegate(IApplicationBuilder subApp)
 			{
 				subApp.RunSignalR();
 			});
@@ -34,8 +32,7 @@ namespace Microsoft.AspNetCore.Builder
 
 		public static IApplicationBuilder UseSignalR(this IApplicationBuilder builder, string path, Type connectionType)
 		{
-			//IL_000f: Unknown result type (might be due to invalid IL or missing references)
-			return MapExtensions.Map(builder, PathString.op_Implicit(path), (Action<IApplicationBuilder>)delegate(IApplicationBuilder subApp)
+			return builder.Map(path, delegate(IApplicationBuilder subApp)
 			{
 				subApp.RunSignalR(connectionType);
 			});
@@ -48,11 +45,11 @@ namespace Microsoft.AspNetCore.Builder
 
 		public static void RunSignalR(this IApplicationBuilder builder, Type connectionType)
 		{
-			if (builder.get_ApplicationServices().GetService(typeof(SignalRMarkerService)) == null)
+			if (builder.ApplicationServices.GetService(typeof(SignalRMarkerService)) == null)
 			{
 				throw new InvalidOperationException(Resources.Error_ServicesNotRegistered);
 			}
-			UseMiddlewareExtensions.UseMiddleware<PersistentConnectionMiddleware>(builder, new object[1]
+			builder.UseMiddleware<PersistentConnectionMiddleware>(new object[1]
 			{
 				connectionType
 			});

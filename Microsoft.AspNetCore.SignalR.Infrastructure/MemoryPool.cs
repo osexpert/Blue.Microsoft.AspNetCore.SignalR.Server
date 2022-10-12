@@ -66,12 +66,12 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 		{
 			if (memory != null)
 			{
-				switch (memory.LongLength)
+				switch (memory.Length)
 				{
-				case 1024L:
+				case 1024:
 					_pool1.Free(memory, 256);
 					break;
-				case 2048L:
+				case 2048:
 					_pool2.Free(memory, 64);
 					break;
 				}
