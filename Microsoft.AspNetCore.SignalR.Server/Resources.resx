@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+<resheader name="resmimetype"><value>text/microsoft-resx</value></resheader><resheader name="version"><value>1.3</value></resheader><resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader><resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader><data name="Error_ArgumentNullOrEmpty"><value>Argument cannot be null or empty</value></data>
+  <data name="Error_ProtocolErrorMissingConnectionToken"><value>Protocol error: Missing connection token.</value></data>
+  <data name="Error_DoNotReadRequireOutgoing"><value>Do not read RequireOutgoing. Use protected _requireOutgoing instead.</value></data>
+  <data name="Error_MultipleActivatorsAreaRegisteredCallGetServices"><value>Multiple activators for type {0} are registered. Please call GetServices instead.</value></data>
+  <data name="Error_DuplicateHubNames"><value>Two Hubs must not share the same name. '{0}' and '{1}' both share the name '{2}'.</value></data>
+  <data name="Error_AmbiguousMessage"><value>Ambiguous message. Unable to send to both '{0}' and '{1}'.</value></data>
+  <data name="Error_HubCouldNotBeResolved"><value>'{0}' Hub could not be resolved.</value></data>
+  <data name="Error_CallerNotAuthorizedToInvokeMethodOn"><value>Caller is not authorized to invoke the {0} method on {1}.</value></data>
+  <data name="Error_TypeMustNotContainEvents"><value>The interface '{0}' must not contain any events.</value></data>
+  <data name="Error_MethodLevelOutgoingAuthorization"><value>Outgoing authorization can only be required for an entire Hub, not a specific method.</value></data>
+  <data name="Error_NoTransportsEnabled"><value>No transports have been enabled. There must be at least one enabled transport.</value></data>
+  <data name="Error_BufferSizeOutOfRange"><value>The buffer size '{0}' is out of range.</value></data>
+  <data name="Error_WebSocketsNotSupported"><value>WebSockets is not supported.</value></data>
+  <data name="Error_MethodMustReturnVoidOrTask"><value>The return type of '{0}.{1}' must be void or Task.</value></data>
+  <data name="Error_DisconnectTimeoutCannotBeConfiguredAfterKeepAlive"><value>DisconnectTimeout cannot be configured after the KeepAlive.</value></data>
+  <data name="Error_UnrecognizedUserIdentity"><value>Unrecognized user identity.  The user identity cannot change during an active SignalR connection.</value></data>
+  <data name="Error_KeepAliveMustBeGreaterThanTwoSeconds"><value>KeepAlive value must be greater than two seconds.</value></data>
+  <data name="Error_MethodMustNotTakeOutParameter"><value>The '{0}' parameter of '{1}.{2}' must not be an out parameter.</value></data>
+  <data name="Error_InvalidCursorFormat"><value>Invalid cursor.</value></data>
+  <data name="Error_KeepAliveMustBeNoMoreThanAThirdOfTheDisconnectTimeout"><value>KeepAlive value must be no more than a third of the DisconnectTimeout.</value></data>
+  <data name="Error_UnableToAddModulePiplineAlreadyInvoked"><value>Unable to add module. The HubPipeline has already been invoked.</value></data>
+  <data name="Error_DuplicateHubNamesInConnectionData"><value>Duplicate Hub names found.</value></data>
+  <data name="Error_MethodCouldNotBeResolved"><value>'{0}' method could not be resolved. No method found with that name.</value></data>
+  <data name="Error_NoConfiguration"><value>A configuration object must be specified.</value></data>
+  <data name="DynamicComment_CallsMethodOnServerSideDeferredPromise"><value>            /// &lt;summary&gt;Calls the {0} method on the server-side {1} hub.&amp;#10;Returns a jQuery.Deferred() promise.&lt;/summary&gt;</value></data>
+  <data name="Forbidden_JSONPDisabled"><value>Forbidden: JSONP is disabled.</value></data>
+  <data name="Error_MethodCouldNotBeResolvedCandidates"><value>'{0}' method could not be resolved. Potential candidates are: {1}</value></data>
+  <data name="Error_NoDependencyResolver"><value>A dependency resolver must be specified.</value></data>
+  <data name="Error_TaskQueueFull"><value>The queue is full.</value></data>
+  <data name="Error_MethodMustNotTakeRefParameter"><value>The '{0}' parameter of '{1}.{2}' must not be a ref parameter.</value></data>
+  <data name="Error_JavaScriptProxyDisabled"><value>SignalR: JavaScript Hub proxy generation has been disabled.</value></data>
+  <data name="Error_ProtocolErrorUnknownTransport"><value>Protocol error: Unknown transport.</value></data>
+  <data name="Error_ParseObjectFailed"><value>Unexpected end when reading object.</value></data>
+  <data name="Error_ServicesNotRegistered"><value>SignalR services have not been registered. Register services by calling 'IServices.UseSignalR()'.</value></data>
+  <data name="Error_DuplicatePayloadsForStream"><value>Duplicate payload id detected for stream '{0}'.</value></data>
+  <data name="Error_IsNotA"><value>'{0}' is not a {1}.</value></data>
+  <data name="DynamicComment_ServerSideTypeIs"><value>            /// &lt;param name=\"{0}\" type=\"{1}\"&gt;Server side type is {2}&lt;/param&gt;</value></data>
+  <data name="Error_ExceptionContextCanOnlyBeModifiedOnce"><value>The ExceptionContext has already been modified once and cannot be modified again.</value></data>
+  <data name="Error_TypeMustNotContainProperties"><value>The interface '{0}' must not contain any properties.</value></data>
+  <data name="Error_TypeMustBeInterface"><value>The type T, '{0}', passed to Hub&lt;T&gt; must be an interface.</value></data>
+  <data name="Error_ScaleoutQueuingConfig"><value>Scaleout queuing is enabled but maximum queue size is 0</value></data>
+  <data name="Error_UsingHubInstanceNotCreatedUnsupported"><value>Using a Hub instance not created by the HubPipeline is unsupported.</value></data>
+  <data name="Error_StreamClosed"><value>The stream has been closed.</value></data>
+  <data name="Error_ConnectionIdIncorrectFormat"><value>The ConnectionId is in the incorrect format.</value></data>
+  <data name="Error_StreamNotOpen"><value>The stream is not open.</value></data>
+  <data name="Error_NotWebSocketRequest"><value>Not a valid web socket request.</value></data>
+  <data name="Error_ConnectionNotInitialized"><value>The PersistentConnection is not initialized.</value></data>
+  <data name="Error_HubProgressOnlyReportableBeforeMethodReturns"><value>You cannot report progress on a hub method invocation that has already completed.</value></data>
+  <data name="Error_HubInvocationFailed"><value>There was an error invoking Hub method '{0}.{1}'.</value></data>
+  <data name="Error_DisconnectTimeoutMustBeAtLeastSixSeconds"><value>DisconnectTimeout must be at least six seconds.</value></data>
+  </root>
