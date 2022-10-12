@@ -1,3 +1,8 @@
+using System;
+using System.Net.WebSockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR.Infrastructure;
@@ -5,15 +10,13 @@ using Microsoft.AspNetCore.SignalR.Json;
 using Microsoft.AspNetCore.SignalR.WebSockets;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System;
-using System.Net.WebSockets;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.AspNetCore.SignalR.Transports
 {
-	public class WebSocketTransport : ForeverTransport
+    /// <summary>
+    /// https://github.com/eduaglz/SignalR-Server/blob/dev/src/Microsoft.AspNet.SignalR.Server/Transports/WebSocketTransport.cs
+    /// </summary>
+    public class WebSocketTransport : ForeverTransport
 	{
 		private class WebSocketTransportContext
 		{
@@ -111,19 +114,25 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			WebSocket webSocket;
 			try
 			{
-				webSocket = await Context.get_WebSockets().AcceptWebSocketAsync();
+				webSocket = await Context.WebSockets.AcceptWebSocketAsync();
 			}
 			catch
 			{
-				_context.get_Response().set_StatusCode(400);
-				await HttpResponseWritingExtensions.WriteAsync(_context.get_Response(), Resources.Error_NotWebSocketRequest, default(CancellationToken));
+                // Bad Request
+                _context.Response.StatusCode = 400;
+				await _context.Response.WriteAsync(Resources.Error_NotWebSocketRequest);
 				return;
 			}
-			Task task = handler.ProcessWebSocketRequestAsync(webSocket, CancellationToken);
-			ProcessRequestCore(connection).ContinueWith((Func<Task, object, Task>)async delegate(Task _, object state)
-			{
-				await((DefaultWebSocketHandler)state).CloseAsync();
-			}, (object)handler);
+
+            // Start the websocket handler so that we can process things over the channel
+            Task task = handler.ProcessWebSocketRequestAsync(webSocket, CancellationToken);
+
+            // This needs to come after wiring up the websocket handler
+            var ignoredTask = ProcessRequestCore(connection).ContinueWith(async (_, state) =>
+            {
+				await ((DefaultWebSocketHandler)state).CloseAsync();
+			}, handler);
+
 			await task;
 		}
 
@@ -157,13 +166,13 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		private void OnClosed()
 		{
-			LoggerExtensions.LogInformation(base.Logger, $"CloseSocket({base.ConnectionId})", Array.Empty<object>());
+			base.Logger.LogInformation($"CloseSocket({base.ConnectionId})");
 			_isAlive = false;
 		}
 
 		private void OnSocketError(Exception error)
 		{
-			LoggerExtensions.LogError(base.Logger, $"OnError({base.ConnectionId}, {error})", Array.Empty<object>());
+			base.Logger.LogError($"OnError({base.ConnectionId}, {error})");
 		}
 	}
 }

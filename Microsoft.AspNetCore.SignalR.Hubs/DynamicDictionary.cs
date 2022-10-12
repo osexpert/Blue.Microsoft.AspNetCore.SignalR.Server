@@ -12,7 +12,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 		{
 			get
 			{
-				_obj.TryGetValue(key, out object value);
+				_obj.TryGetValue(key, out var value);
 				return Wrap(value);
 			}
 			set

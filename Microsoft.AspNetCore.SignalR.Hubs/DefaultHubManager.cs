@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.SignalR.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.SignalR.Json;
 
 namespace Microsoft.AspNetCore.SignalR.Hubs
 {
@@ -83,7 +83,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 		public IEnumerable<IHub> ResolveHubs()
 		{
 			return from hub in GetHubs(null)
-			select _activator.Create(hub);
+				select _activator.Create(hub);
 		}
 	}
 }

@@ -1,7 +1,7 @@
+using System.Linq;
 using Microsoft.AspNetCore.SignalR.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Linq;
 
 namespace Microsoft.AspNetCore.SignalR.Hubs
 {
@@ -48,8 +48,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 				Hub = hubInvocation.Hub,
 				Method = hubInvocation.Method,
 				Id = hubInvocation.Id,
-				ParameterValues = ((hubInvocation.Args != null) ? (from value in hubInvocation.Args
-				select new JRawValue(value)).ToArray() : _emptyArgs)
+				ParameterValues = ((hubInvocation.Args != null) ? hubInvocation.Args.Select((JRaw value) => new JRawValue(value)).ToArray() : _emptyArgs)
 			};
 		}
 	}

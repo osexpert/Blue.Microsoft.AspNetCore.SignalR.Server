@@ -1,10 +1,10 @@
+using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.SignalR.Hubs;
 using Microsoft.AspNetCore.SignalR.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 
 namespace Microsoft.AspNetCore.SignalR.Infrastructure
 {
@@ -17,7 +17,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 		public ConnectionManager(IServiceProvider serviceProvider)
 		{
 			_serviceProvider = serviceProvider;
-			_counters = ServiceProviderServiceExtensions.GetRequiredService<IPerformanceCounterManager>(_serviceProvider);
+			_counters = _serviceProvider.GetRequiredService<IPerformanceCounterManager>();
 		}
 
 		public IPersistentConnectionContext GetConnectionContext<TConnection>() where TConnection : PersistentConnection
@@ -45,8 +45,8 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 		public IHubContext GetHubContext(string hubName)
 		{
 			Connection connectionCore = GetConnectionCore(null);
-			IHubManager requiredService = ServiceProviderServiceExtensions.GetRequiredService<IHubManager>(_serviceProvider);
-			IHubPipelineInvoker requiredService2 = ServiceProviderServiceExtensions.GetRequiredService<IHubPipelineInvoker>(_serviceProvider);
+			IHubManager requiredService = _serviceProvider.GetRequiredService<IHubManager>();
+			IHubPipelineInvoker requiredService2 = _serviceProvider.GetRequiredService<IHubPipelineInvoker>();
 			requiredService.EnsureHub(hubName, _counters.ErrorsHubResolutionTotal, _counters.ErrorsHubResolutionPerSec, _counters.ErrorsAllTotal, _counters.ErrorsAllPerSec);
 			return new HubContext(connectionCore, requiredService2, hubName);
 		}
@@ -58,7 +58,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 
 		internal Connection GetConnectionCore(string connectionName)
 		{
-			object list2;
+			IList<string> list2;
 			if (connectionName != null)
 			{
 				IList<string> list = new string[1]
@@ -69,12 +69,12 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 			}
 			else
 			{
-				list2 = Microsoft.AspNetCore.SignalR.Infrastructure.ListHelper<string>.Empty;
+				list2 = ListHelper<string>.Empty;
 			}
-			IList<string> signals = (IList<string>)list2;
-			ServiceProviderServiceExtensions.GetRequiredService<AckSubscriber>(_serviceProvider);
+			IList<string> signals = list2;
+			_serviceProvider.GetRequiredService<AckSubscriber>();
 			string connectionId = Guid.NewGuid().ToString();
-			return new Connection(ServiceProviderServiceExtensions.GetRequiredService<IMessageBus>(_serviceProvider), ServiceProviderServiceExtensions.GetRequiredService<JsonSerializer>(_serviceProvider), connectionName, connectionId, signals, Microsoft.AspNetCore.SignalR.Infrastructure.ListHelper<string>.Empty, ServiceProviderServiceExtensions.GetRequiredService<ILoggerFactory>(_serviceProvider), ServiceProviderServiceExtensions.GetRequiredService<IAckHandler>(_serviceProvider), ServiceProviderServiceExtensions.GetRequiredService<IPerformanceCounterManager>(_serviceProvider), ServiceProviderServiceExtensions.GetRequiredService<IProtectedData>(_serviceProvider), ServiceProviderServiceExtensions.GetRequiredService<IMemoryPool>(_serviceProvider));
+			return new Connection(_serviceProvider.GetRequiredService<IMessageBus>(), _serviceProvider.GetRequiredService<JsonSerializer>(), connectionName, connectionId, signals, ListHelper<string>.Empty, _serviceProvider.GetRequiredService<ILoggerFactory>(), _serviceProvider.GetRequiredService<IAckHandler>(), _serviceProvider.GetRequiredService<IPerformanceCounterManager>(), _serviceProvider.GetRequiredService<IProtectedData>(), _serviceProvider.GetRequiredService<IMemoryPool>());
 		}
 	}
 }

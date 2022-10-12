@@ -1,6 +1,6 @@
-using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.AspNetCore.SignalR.Json
 {
@@ -10,14 +10,14 @@ namespace Microsoft.AspNetCore.SignalR.Json
 
 		public JRawValue(JRaw value)
 		{
-			_value = ((object)value).ToString();
+			_value = value.ToString();
 		}
 
 		public object ConvertTo(Type type)
 		{
-			using (StringReader stringReader = new StringReader(_value))
+			using (StringReader reader = new StringReader(_value))
 			{
-				return JsonUtility.CreateDefaultSerializer().Deserialize((TextReader)stringReader, type);
+				return JsonUtility.CreateDefaultSerializer().Deserialize(reader, type);
 			}
 		}
 

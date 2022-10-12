@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Hubs;
 using Microsoft.AspNetCore.SignalR.Infrastructure;
@@ -5,7 +6,6 @@ using Microsoft.AspNetCore.SignalR.Transports;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using System;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -18,36 +18,36 @@ namespace Microsoft.Extensions.DependencyInjection
 
 		public static SignalRServicesBuilder AddSignalR(this IServiceCollection services, Action<SignalROptions> configureOptions)
 		{
-			OptionsServiceCollectionExtensions.AddOptions(services);
-			DataProtectionServiceCollectionExtensions.AddDataProtection(services);
+			services.AddOptions();
+			services.AddDataProtection();
 			services.AddMessageBus();
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IMemoryPool, MemoryPool>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<ITransportManager, TransportManager>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<ITransportHeartbeat, TransportHeartbeat>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IConnectionManager, ConnectionManager>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IAckHandler, AckHandler>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<AckSubscriber, AckSubscriber>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IAssemblyLocator, DefaultAssemblyLocator>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IHubManager, DefaultHubManager>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IMethodDescriptorProvider, ReflectedMethodDescriptorProvider>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IHubDescriptorProvider, ReflectedHubDescriptorProvider>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<JsonSerializer, JsonSerializer>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IUserIdProvider, PrincipalUserIdProvider>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IParameterResolver, DefaultParameterResolver>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IHubActivator, DefaultHubActivator>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IJavaScriptProxyGenerator, DefaultJavaScriptProxyGenerator>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IJavaScriptMinifier, NullJavaScriptMinifier>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IHubRequestParser, HubRequestParser>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IHubPipelineInvoker, HubPipeline>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton(services, typeof(IPersistentConnectionContext<>), typeof(PersistentConnectionContextService<>));
-			ServiceCollectionDescriptorExtensions.TryAddSingleton(services, typeof(IHubContext<>), typeof(HubContextService<>));
-			ServiceCollectionDescriptorExtensions.TryAddSingleton(services, typeof(IHubContext<, >), typeof(HubContextService<, >));
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<SignalRMarkerService, SignalRMarkerService>(services);
-			ServiceCollectionDescriptorExtensions.TryAddSingleton<IProtectedData, DataProtectionProviderProtectedData>(services);
-			ServiceCollectionDescriptorExtensions.TryAddTransient<IConfigureOptions<SignalROptions>, SignalROptionsSetup>(services);
+			services.TryAddSingleton<IMemoryPool, MemoryPool>();
+			services.TryAddSingleton<ITransportManager, TransportManager>();
+			services.TryAddSingleton<ITransportHeartbeat, TransportHeartbeat>();
+			services.TryAddSingleton<IConnectionManager, ConnectionManager>();
+			services.TryAddSingleton<IAckHandler, AckHandler>();
+			services.TryAddSingleton<AckSubscriber, AckSubscriber>();
+			services.TryAddSingleton<IAssemblyLocator, DefaultAssemblyLocator>();
+			services.TryAddSingleton<IHubManager, DefaultHubManager>();
+			services.TryAddSingleton<IMethodDescriptorProvider, ReflectedMethodDescriptorProvider>();
+			services.TryAddSingleton<IHubDescriptorProvider, ReflectedHubDescriptorProvider>();
+			services.TryAddSingleton<JsonSerializer, JsonSerializer>();
+			services.TryAddSingleton<IUserIdProvider, PrincipalUserIdProvider>();
+			services.TryAddSingleton<IParameterResolver, DefaultParameterResolver>();
+			services.TryAddSingleton<IHubActivator, DefaultHubActivator>();
+			services.TryAddSingleton<IJavaScriptProxyGenerator, DefaultJavaScriptProxyGenerator>();
+			services.TryAddSingleton<IJavaScriptMinifier, NullJavaScriptMinifier>();
+			services.TryAddSingleton<IHubRequestParser, HubRequestParser>();
+			services.TryAddSingleton<IHubPipelineInvoker, HubPipeline>();
+			services.TryAddSingleton(typeof(IPersistentConnectionContext<>), typeof(PersistentConnectionContextService<>));
+			services.TryAddSingleton(typeof(IHubContext<>), typeof(HubContextService<>));
+			services.TryAddSingleton(typeof(IHubContext<, >), typeof(HubContextService<, >));
+			services.TryAddSingleton<SignalRMarkerService, SignalRMarkerService>();
+			services.TryAddSingleton<IProtectedData, DataProtectionProviderProtectedData>();
+			services.TryAddTransient<IConfigureOptions<SignalROptions>, SignalROptionsSetup>();
 			if (configureOptions != null)
 			{
-				OptionsServiceCollectionExtensions.Configure<SignalROptions>(services, configureOptions);
+				services.Configure(configureOptions);
 			}
 			return new SignalRServicesBuilder(services);
 		}

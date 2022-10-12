@@ -6,7 +6,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 	{
 		private IHubConnectionContext<dynamic> _dynamicContext;
 
-		public TClient All => (TClient)TypedClientBuilder<TClient>.Build(_dynamicContext.All);
+		public TClient All => TypedClientBuilder<TClient>.Build(_dynamicContext.All);
 
 		public TypedHubConnectionContext(IHubConnectionContext<dynamic> dynamicContext)
 		{
@@ -15,37 +15,37 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		public TClient AllExcept(params string[] excludeConnectionIds)
 		{
-			return (TClient)TypedClientBuilder<TClient>.Build(_dynamicContext.AllExcept(excludeConnectionIds));
+			return TypedClientBuilder<TClient>.Build(_dynamicContext.AllExcept(excludeConnectionIds));
 		}
 
 		public TClient Client(string connectionId)
 		{
-			return (TClient)TypedClientBuilder<TClient>.Build(_dynamicContext.Client(connectionId));
+			return TypedClientBuilder<TClient>.Build(_dynamicContext.Client(connectionId));
 		}
 
 		public TClient Clients(IList<string> connectionIds)
 		{
-			return (TClient)TypedClientBuilder<TClient>.Build(_dynamicContext.Clients(connectionIds));
+			return TypedClientBuilder<TClient>.Build(_dynamicContext.Clients(connectionIds));
 		}
 
 		public TClient Group(string groupName, params string[] excludeConnectionIds)
 		{
-			return (TClient)TypedClientBuilder<TClient>.Build(_dynamicContext.Group(groupName, excludeConnectionIds));
+			return TypedClientBuilder<TClient>.Build(_dynamicContext.Group(groupName, excludeConnectionIds));
 		}
 
 		public TClient Groups(IList<string> groupNames, params string[] excludeConnectionIds)
 		{
-			return (TClient)TypedClientBuilder<TClient>.Build(_dynamicContext.Groups(groupNames, excludeConnectionIds));
+			return TypedClientBuilder<TClient>.Build(_dynamicContext.Groups(groupNames, excludeConnectionIds));
 		}
 
 		public TClient User(string userId)
 		{
-			return (TClient)TypedClientBuilder<TClient>.Build(_dynamicContext.User(userId));
+			return TypedClientBuilder<TClient>.Build(_dynamicContext.User(userId));
 		}
 
 		public TClient Users(IList<string> userIds)
 		{
-			return (TClient)TypedClientBuilder<TClient>.Build(_dynamicContext.Users(userIds));
+			return TypedClientBuilder<TClient>.Build(_dynamicContext.Users(userIds));
 		}
 	}
 }

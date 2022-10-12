@@ -21,7 +21,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		public static void Validate()
 		{
-			Func<IClientProxy, T> value = _builder.Value;
+			_ = _builder.Value;
 		}
 
 		private static Func<IClientProxy, T> GenerateClientBuilder()
@@ -34,7 +34,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		private static Type GenerateInterfaceImplementation(ModuleBuilder moduleBuilder)
 		{
-			TypeBuilder typeBuilder = moduleBuilder.DefineType("Microsoft.AspNetCore.SignalR.Hubs.TypedClientBuilder." + typeof(T).get_Name() + "Impl", TypeAttributes.Public, typeof(object), new Type[1]
+			TypeBuilder typeBuilder = moduleBuilder.DefineType("Microsoft.AspNetCore.SignalR.Hubs.TypedClientBuilder." + typeof(T).Name + "Impl", TypeAttributes.Public, typeof(object), new Type[1]
 			{
 				typeof(T)
 			});
@@ -58,15 +58,15 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 				}
 			}
 			MethodInfo[] methods = TypeExtensions.GetMethods(interfaceType);
-			foreach (MethodInfo methodInfo in methods)
+			for (int i = 0; i < methods.Length; i++)
 			{
-				yield return methodInfo;
+				yield return methods[i];
 			}
 		}
 
 		private static void BuildConstructor(TypeBuilder type, FieldInfo proxyField)
 		{
-			MethodBuilder methodBuilder = type.DefineMethod(".ctor", MethodAttributes.FamANDAssem | MethodAttributes.Family | MethodAttributes.HideBySig);
+			MethodBuilder methodBuilder = type.DefineMethod(".ctor", MethodAttributes.Public | MethodAttributes.HideBySig);
 			ConstructorInfo con = typeof(object).GetTypeInfo().DeclaredConstructors.First((ConstructorInfo c) => c.GetParameters().Length == 0);
 			methodBuilder.SetReturnType(typeof(void));
 			methodBuilder.SetParameters(typeof(IClientProxy));
@@ -81,10 +81,9 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		private static void BuildMethod(TypeBuilder type, MethodInfo interfaceMethodInfo, FieldInfo proxyField)
 		{
-			MethodAttributes attributes = MethodAttributes.FamANDAssem | MethodAttributes.Family | MethodAttributes.Final | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.VtableLayoutMask;
+			MethodAttributes attributes = MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.VtableLayoutMask;
 			ParameterInfo[] parameters = interfaceMethodInfo.GetParameters();
-			Type[] array = (from param in parameters
-			select param.ParameterType).ToArray();
+			Type[] array = parameters.Select((ParameterInfo param) => param.ParameterType).ToArray();
 			MethodBuilder methodBuilder = type.DefineMethod(interfaceMethodInfo.Name, attributes);
 			MethodInfo runtimeMethod = RuntimeReflectionExtensions.GetRuntimeMethod(typeof(IClientProxy), "Invoke", new Type[2]
 			{
@@ -94,8 +93,8 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			methodBuilder.SetReturnType(interfaceMethodInfo.ReturnType);
 			methodBuilder.SetParameters(array);
 			string[] array2 = (from p in array
-			where p.IsGenericParameter
-			select p.get_Name()).Distinct().ToArray();
+				where p.IsGenericParameter
+				select p.Name).Distinct().ToArray();
 			if (array2.Any())
 			{
 				methodBuilder.DefineGenericParameters(array2);
@@ -127,17 +126,17 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		private static void VerifyInterface(Type interfaceType)
 		{
-			if (!interfaceType.GetTypeInfo().get_IsInterface())
+			if (!interfaceType.GetTypeInfo().IsInterface)
 			{
-				throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_TypeMustBeInterface, interfaceType.get_Name()));
+				throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_TypeMustBeInterface, interfaceType.Name));
 			}
 			if (TypeExtensions.GetProperties(interfaceType).Length != 0)
 			{
-				throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_TypeMustNotContainProperties, interfaceType.get_Name()));
+				throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_TypeMustNotContainProperties, interfaceType.Name));
 			}
 			if (TypeExtensions.GetEvents(interfaceType).Length != 0)
 			{
-				throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_TypeMustNotContainEvents, interfaceType.get_Name()));
+				throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_TypeMustNotContainEvents, interfaceType.Name));
 			}
 			MethodInfo[] methods = TypeExtensions.GetMethods(interfaceType);
 			foreach (MethodInfo interfaceMethod in methods)
@@ -155,7 +154,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 		{
 			if ((object)interfaceMethod.ReturnType != typeof(void) && (object)interfaceMethod.ReturnType != typeof(Task))
 			{
-				throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_MethodMustReturnVoidOrTask, interfaceType.get_Name(), interfaceMethod.Name));
+				throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_MethodMustReturnVoidOrTask, interfaceType.Name, interfaceMethod.Name));
 			}
 			ParameterInfo[] parameters = interfaceMethod.GetParameters();
 			foreach (ParameterInfo parameter in parameters)
@@ -168,11 +167,11 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 		{
 			if (parameter.IsOut)
 			{
-				throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_MethodMustNotTakeOutParameter, parameter.Name, interfaceType.get_Name(), interfaceMethod.Name));
+				throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_MethodMustNotTakeOutParameter, parameter.Name, interfaceType.Name, interfaceMethod.Name));
 			}
 			if (parameter.ParameterType.IsByRef)
 			{
-				throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_MethodMustNotTakeRefParameter, parameter.Name, interfaceType.get_Name(), interfaceMethod.Name));
+				throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_MethodMustNotTakeRefParameter, parameter.Name, interfaceType.Name, interfaceMethod.Name));
 			}
 		}
 	}

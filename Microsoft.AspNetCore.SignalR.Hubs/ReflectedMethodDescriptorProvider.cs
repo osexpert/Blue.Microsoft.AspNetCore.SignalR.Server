@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.SignalR.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using Microsoft.AspNetCore.SignalR.Json;
 
 namespace Microsoft.AspNetCore.SignalR.Hubs
 {
@@ -32,8 +32,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		private static IDictionary<string, IEnumerable<MethodDescriptor>> BuildMethodCacheFor(HubDescriptor hub)
 		{
-			return ReflectionHelper.GetExportedHubMethods(hub.HubType).GroupBy(GetMethodName, StringComparer.OrdinalIgnoreCase).ToDictionary((IGrouping<string, MethodInfo> group) => group.Key, (IGrouping<string, MethodInfo> group) => from oload in @group
-			select GetMethodDescriptor(@group.Key, hub, oload), StringComparer.OrdinalIgnoreCase);
+			return ReflectionHelper.GetExportedHubMethods(hub.HubType).GroupBy(GetMethodName, StringComparer.OrdinalIgnoreCase).ToDictionary((IGrouping<string, MethodInfo> group) => group.Key, (IGrouping<string, MethodInfo> group) => group.Select((MethodInfo oload) => GetMethodDescriptor(group.Key, hub, oload)), StringComparer.OrdinalIgnoreCase);
 		}
 
 		private static MethodDescriptor GetMethodDescriptor(string methodName, HubDescriptor hub, MethodInfo methodInfo)
@@ -49,8 +48,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 				Hub = hub,
 				Attributes = CustomAttributeExtensions.GetCustomAttributes(methodInfo, typeof(Attribute), true).Cast<Attribute>(),
 				ProgressReportingType = progressReportingType,
-				Parameters = (from p in source
-				select new ParameterDescriptor
+				Parameters = source.Select((ParameterInfo p) => new ParameterDescriptor
 				{
 					Name = p.Name,
 					ParameterType = p.ParameterType
@@ -72,7 +70,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		private static bool IsProgressType(ParameterInfo parameter)
 		{
-			if (parameter != null && parameter.ParameterType.GetTypeInfo().get_IsGenericType())
+			if (parameter != null && parameter.ParameterType.GetTypeInfo().IsGenericType)
 			{
 				return (object)parameter.ParameterType.GetGenericTypeDefinition() == typeof(IProgress<>);
 			}
@@ -84,11 +82,9 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			string key = BuildHubExecutableMethodCacheKey(hub, method, parameters);
 			if (!_executableMethods.TryGetValue(key, out descriptor))
 			{
-				if (FetchMethodsFor(hub).TryGetValue(method, out IEnumerable<MethodDescriptor> value))
+				if (FetchMethodsFor(hub).TryGetValue(method, out var value))
 				{
-					List<MethodDescriptor> list = (from o in value
-					where o.Matches(parameters)
-					select o).ToList();
+					List<MethodDescriptor> list = value.Where((MethodDescriptor o) => o.Matches(parameters)).ToList();
 					descriptor = ((list.Count == 1) ? list[0] : null);
 				}
 				else
@@ -105,7 +101,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		private static string BuildHubExecutableMethodCacheKey(HubDescriptor hub, string method, IList<IJsonValue> parameters)
 		{
-			string text = (parameters == null) ? "0" : parameters.Count.ToString(CultureInfo.InvariantCulture);
+			string text = ((parameters == null) ? "0" : parameters.Count.ToString(CultureInfo.InvariantCulture));
 			string text2 = method.ToUpperInvariant();
 			return hub.Name + "::" + text2 + "(" + text + ")";
 		}

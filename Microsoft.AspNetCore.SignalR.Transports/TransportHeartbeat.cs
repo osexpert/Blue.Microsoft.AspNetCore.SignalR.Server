@@ -1,12 +1,12 @@
-using Microsoft.AspNetCore.SignalR.Configuration;
-using Microsoft.AspNetCore.SignalR.Infrastructure;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Microsoft.AspNetCore.SignalR.Configuration;
+using Microsoft.AspNetCore.SignalR.Infrastructure;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.AspNetCore.SignalR.Transports
 {
@@ -60,9 +60,9 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		public TransportHeartbeat(IOptions<SignalROptions> optionsAccessor, IPerformanceCounterManager counters, ILoggerFactory loggerFactory)
 		{
-			_transportOptions = optionsAccessor.get_Value().Transports;
+			_transportOptions = optionsAccessor.Value.Transports;
 			_counters = counters;
-			_logger = LoggerFactoryExtensions.CreateLogger<TransportHeartbeat>(loggerFactory);
+			_logger = loggerFactory.CreateLogger<TransportHeartbeat>();
 			_timer = new Timer(Beat, null, _transportOptions.HeartbeatInterval(), _transportOptions.HeartbeatInterval());
 		}
 
@@ -77,7 +77,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			ITrackingConnection oldConnection = null;
 			_connections.AddOrUpdate(connection.ConnectionId, newMetadata, delegate(string key, ConnectionMetadata old)
 			{
-				LoggerExtensions.LogDebug(Logger, $"Connection {old.Connection.ConnectionId} exists. Closing previous connection.", Array.Empty<object>());
+				Logger.LogDebug($"Connection {old.Connection.ConnectionId} exists. Closing previous connection.");
 				old.Connection.ApplyState(TransportConnectionStates.Replaced);
 				old.Connection.End();
 				isNewConnection = false;
@@ -86,7 +86,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			});
 			if (isNewConnection)
 			{
-				LoggerExtensions.LogInformation(Logger, $"Connection {connection.ConnectionId} is New.", Array.Empty<object>());
+				Logger.LogInformation($"Connection {connection.ConnectionId} is New.");
 				connection.IncrementConnectionsCount();
 			}
 			lock (_counterLock)
@@ -104,7 +104,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			{
 				throw new ArgumentNullException("connection");
 			}
-			if (_connections.TryRemove(connection.ConnectionId, out ConnectionMetadata _))
+			if (_connections.TryRemove(connection.ConnectionId, out var _))
 			{
 				connection.DecrementConnectionsCount();
 				lock (_counterLock)
@@ -112,7 +112,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 					_counters.ConnectionsCurrent.RawValue = _connections.Count;
 				}
 				connection.ApplyState(TransportConnectionStates.Removed);
-				LoggerExtensions.LogInformation(Logger, $"Removing connection {connection.ConnectionId}", Array.Empty<object>());
+				Logger.LogInformation($"Removing connection {connection.ConnectionId}");
 			}
 		}
 
@@ -122,7 +122,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			{
 				throw new ArgumentNullException("connection");
 			}
-			if (connection.IsAlive && _connections.TryGetValue(connection.ConnectionId, out ConnectionMetadata value))
+			if (connection.IsAlive && _connections.TryGetValue(connection.ConnectionId, out var value))
 			{
 				value.LastMarked = DateTime.UtcNow;
 			}
@@ -130,49 +130,41 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		public IList<ITrackingConnection> GetConnections()
 		{
-			return (from metadata in _connections.Values
-			select metadata.Connection).ToList();
+			return _connections.Values.Select((ConnectionMetadata metadata) => metadata.Connection).ToList();
 		}
 
 		private void Beat(object state)
 		{
 			if (Interlocked.Exchange(ref _running, 1) == 1)
 			{
-				LoggerExtensions.LogDebug(Logger, "Timer handler took longer than current interval", Array.Empty<object>());
+				Logger.LogDebug("Timer handler took longer than current interval");
+				return;
 			}
-			else
+			lock (_counterLock)
 			{
-				lock (_counterLock)
+				_counters.ConnectionsCurrent.RawValue = _connections.Count;
+			}
+			try
+			{
+				_heartbeatCount++;
+				foreach (ConnectionMetadata value in _connections.Values)
 				{
-					_counters.ConnectionsCurrent.RawValue = _connections.Count;
-				}
-				try
-				{
-					_heartbeatCount++;
-					foreach (ConnectionMetadata value in _connections.Values)
+					if (value.Connection.IsAlive)
 					{
-						if (value.Connection.IsAlive)
-						{
-							CheckTimeoutAndKeepAlive(value);
-						}
-						else
-						{
-							LoggerExtensions.LogDebug(Logger, value.Connection.ConnectionId + " is dead", Array.Empty<object>());
-							CheckDisconnect(value);
-						}
+						CheckTimeoutAndKeepAlive(value);
+						continue;
 					}
+					Logger.LogDebug(value.Connection.ConnectionId + " is dead");
+					CheckDisconnect(value);
 				}
-				catch (Exception ex)
-				{
-					LoggerExtensions.LogError(Logger, "SignalR error during transport heart beat on background thread: {0}", new object[1]
-					{
-						ex
-					});
-				}
-				finally
-				{
-					Interlocked.Exchange(ref _running, 0);
-				}
+			}
+			catch (Exception ex)
+			{
+				Logger.LogError("SignalR error during transport heart beat on background thread: {0}", ex);
+			}
+			finally
+			{
+				Interlocked.Exchange(ref _running, 0);
 			}
 		}
 
@@ -181,19 +173,17 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			if (RaiseTimeout(metadata))
 			{
 				metadata.Connection.Timeout();
+				return;
 			}
-			else
+			if (RaiseKeepAlive(metadata))
 			{
-				if (RaiseKeepAlive(metadata))
+				Logger.LogDebug("KeepAlive(" + metadata.Connection.ConnectionId + ")");
+				metadata.Connection.KeepAlive().Catch(delegate(AggregateException ex, object state)
 				{
-					LoggerExtensions.LogDebug(Logger, "KeepAlive(" + metadata.Connection.ConnectionId + ")", Array.Empty<object>());
-					metadata.Connection.KeepAlive().Catch(delegate(AggregateException ex, object state)
-					{
-						OnKeepAliveError(ex, state);
-					}, Logger, Logger);
-				}
-				MarkConnection(metadata.Connection);
+					OnKeepAliveError(ex, state);
+				}, Logger, Logger);
 			}
+			MarkConnection(metadata.Connection);
 		}
 
 		private void CheckDisconnect(ConnectionMetadata metadata)
@@ -208,7 +198,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			}
 			catch (Exception arg)
 			{
-				LoggerExtensions.LogError(Logger, $"Raising Disconnect failed: {arg}", Array.Empty<object>());
+				Logger.LogError($"Raising Disconnect failed: {arg}");
 			}
 		}
 
@@ -243,19 +233,20 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		protected virtual void Dispose(bool disposing)
 		{
-			if (disposing)
+			if (!disposing)
 			{
-				if (_timer != null)
+				return;
+			}
+			if (_timer != null)
+			{
+				_timer.Dispose();
+			}
+			Logger.LogInformation("Dispose(). Closing all connections");
+			foreach (KeyValuePair<string, ConnectionMetadata> connection in _connections)
+			{
+				if (_connections.TryGetValue(connection.Key, out var value))
 				{
-					_timer.Dispose();
-				}
-				LoggerExtensions.LogInformation(Logger, "Dispose(). Closing all connections", Array.Empty<object>());
-				foreach (KeyValuePair<string, ConnectionMetadata> connection in _connections)
-				{
-					if (_connections.TryGetValue(connection.Key, out ConnectionMetadata value))
-					{
-						value.Connection.End();
-					}
+					value.Connection.End();
 				}
 			}
 		}
@@ -267,9 +258,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		private static void OnKeepAliveError(AggregateException ex, object state)
 		{
-			//IL_0001: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0020: Expected O, but got Unknown
-			LoggerExtensions.LogError(state, "Failed to send keep alive: " + ex.GetBaseException(), Array.Empty<object>());
+			((ILogger)state).LogError("Failed to send keep alive: " + ex.GetBaseException());
 		}
 	}
 }

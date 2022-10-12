@@ -19,11 +19,11 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		public MultipleSignalProxy(IConnection connection, IHubPipelineInvoker invoker, IList<string> signals, string hubName, string prefix, IList<string> exclude)
 		{
+			MultipleSignalProxy multipleSignalProxy = this;
 			_connection = connection;
 			_invoker = invoker;
 			_hubName = hubName;
-			_signals = (from signal in signals
-			select prefix + _hubName + "." + signal).ToList();
+			_signals = signals.Select((string signal) => prefix + multipleSignalProxy._hubName + "." + signal).ToList();
 			_exclude = exclude;
 		}
 

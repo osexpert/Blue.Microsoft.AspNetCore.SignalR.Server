@@ -1,3 +1,6 @@
+using System;
+using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -5,9 +8,6 @@ using Microsoft.AspNetCore.SignalR.Infrastructure;
 using Microsoft.AspNetCore.SignalR.Json;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Microsoft.AspNetCore.SignalR.Transports
 {
@@ -65,14 +65,14 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			return base.InitializeResponse(connection).Then((ServerSentEventsTransport s) => WriteInit(s), this);
 		}
 
-		private static Task PerformKeepAlive(object state)
+		private static async Task PerformKeepAlive(object state)
 		{
 			ServerSentEventsTransport obj = (ServerSentEventsTransport)state;
-			obj.Context.get_Response().Write(new ArraySegment<byte>(_keepAlive));
-			return obj.Context.get_Response().Flush();
+			await obj.Context.Response.WriteAsync(new ArraySegment<byte>(_keepAlive));
+			await  obj.Context.Response.Flush();
 		}
 
-		private static Task PerformSend(object state)
+		private static async Task PerformSend(object state)
 		{
 			SendContext sendContext = (SendContext)state;
 			using (BinaryMemoryPoolTextWriter binaryMemoryPoolTextWriter = new BinaryMemoryPoolTextWriter(sendContext.Transport.Pool))
@@ -82,21 +82,17 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 				binaryMemoryPoolTextWriter.WriteLine();
 				binaryMemoryPoolTextWriter.WriteLine();
 				binaryMemoryPoolTextWriter.Flush();
-				sendContext.Transport.Context.get_Response().Write(binaryMemoryPoolTextWriter.Buffer);
+				await sendContext.Transport.Context.Response.WriteAsync(binaryMemoryPoolTextWriter.Buffer);
 			}
-			return sendContext.Transport.Context.get_Response().Flush();
+			await sendContext.Transport.Context.Response.Flush();
 		}
 
-		private static Task WriteInit(ServerSentEventsTransport transport)
+		private static async Task WriteInit(ServerSentEventsTransport transport)
 		{
-			IHttpBufferingFeature val = transport.Context.get_Features().Get<IHttpBufferingFeature>();
-			if (val != null)
-			{
-				val.DisableRequestBuffering();
-			}
-			transport.Context.get_Response().set_ContentType("text/event-stream");
-			transport.Context.get_Response().Write(new ArraySegment<byte>(_dataInitialized));
-			return transport.Context.get_Response().Flush();
+			transport.Context.Features.Get<IHttpBufferingFeature>()?.DisableRequestBuffering();
+			transport.Context.Response.ContentType = "text/event-stream";
+			await transport.Context.Response.WriteAsync(new ArraySegment<byte>(_dataInitialized));
+			await transport.Context.Response.Flush();
 		}
 	}
 }

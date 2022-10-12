@@ -1,9 +1,8 @@
+using System;
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
-using System;
-using System.Collections.Concurrent;
 
 namespace Microsoft.AspNetCore.SignalR.Transports
 {
@@ -21,7 +20,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			{
 				throw new ArgumentNullException("optionsAccessor");
 			}
-			TransportType enabledTransports = optionsAccessor.get_Value().Transports.EnabledTransports;
+			TransportType enabledTransports = optionsAccessor.Value.Transports.EnabledTransports;
 			if (enabledTransports.HasFlag(TransportType.WebSockets))
 			{
 				Register("webSockets", (HttpContext context) => ActivatorUtilities.CreateInstance<WebSocketTransport>(serviceProvider, new object[1]
@@ -68,22 +67,21 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			{
 				throw new ArgumentNullException("transportName");
 			}
-			_transports.TryRemove(transportName, out Func<HttpContext, ITransport> _);
+			_transports.TryRemove(transportName, out var _);
 		}
 
 		public ITransport GetTransport(HttpContext context)
 		{
-			//IL_001e: Unknown result type (might be due to invalid IL or missing references)
 			if (context == null)
 			{
 				throw new ArgumentNullException("context");
 			}
-			string text = StringValues.op_Implicit(context.get_Request().get_Query().get_Item("transport"));
+			string text = context.Request.Query["transport"];
 			if (string.IsNullOrEmpty(text))
 			{
 				return null;
 			}
-			if (_transports.TryGetValue(text, out Func<HttpContext, ITransport> value))
+			if (_transports.TryGetValue(text, out var value))
 			{
 				return value(context);
 			}

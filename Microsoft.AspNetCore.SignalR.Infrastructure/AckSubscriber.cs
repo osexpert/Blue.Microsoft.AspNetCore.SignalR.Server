@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.SignalR.Messaging;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR.Messaging;
 
 namespace Microsoft.AspNetCore.SignalR.Infrastructure
 {
@@ -90,7 +90,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 			{
 				((IAckHandler)s).TriggerAck(m.CommandId);
 			}, _ackHandler);
-			return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.True;
+			return TaskAsyncHelper.True;
 		}
 	}
 }

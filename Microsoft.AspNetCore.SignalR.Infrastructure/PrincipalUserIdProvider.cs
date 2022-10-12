@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Http;
 using System;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace Microsoft.AspNetCore.SignalR.Infrastructure
 {
@@ -12,7 +12,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 			{
 				throw new ArgumentNullException("request");
 			}
-			ClaimsPrincipal user = request.get_HttpContext().get_User();
+			ClaimsPrincipal user = request.HttpContext.User;
 			if (user != null && user.Identity != null)
 			{
 				return user.Identity.Name;

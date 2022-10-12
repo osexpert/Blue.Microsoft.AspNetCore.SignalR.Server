@@ -1,11 +1,3 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.SignalR.Infrastructure;
-using Microsoft.AspNetCore.SignalR.Json;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -13,6 +5,13 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR.Infrastructure;
+using Microsoft.AspNetCore.SignalR.Json;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace Microsoft.AspNetCore.SignalR.Hubs
 {
@@ -55,7 +54,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		private static readonly MethodInfo _continueWithMethod = TypeExtensions.GetMethod(typeof(HubDispatcher), "ContinueWith", BindingFlags.Static | BindingFlags.NonPublic);
 
-		protected override ILogger Logger => LoggerFactoryExtensions.CreateLogger<HubDispatcher>(base.LoggerFactory);
+		protected override ILogger Logger => base.LoggerFactory.CreateLogger<HubDispatcher>();
 
 		internal override string GroupPrefix => "hg-";
 
@@ -65,7 +64,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			{
 				throw new ArgumentNullException("optionsAccessor");
 			}
-			SignalROptions value = optionsAccessor.get_Value();
+			SignalROptions value = optionsAccessor.Value;
 			_enableJavaScriptProxies = value.Hubs.EnableJavaScriptProxies;
 			_enableDetailedErrors = value.Hubs.EnableDetailedErrors;
 		}
@@ -76,7 +75,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			{
 				throw new ArgumentNullException("serviceProvider");
 			}
-			object proxyGenerator;
+			IJavaScriptProxyGenerator proxyGenerator;
 			if (!_enableJavaScriptProxies)
 			{
 				IJavaScriptProxyGenerator javaScriptProxyGenerator = new EmptyJavaScriptProxyGenerator();
@@ -84,26 +83,25 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			}
 			else
 			{
-				proxyGenerator = ServiceProviderServiceExtensions.GetRequiredService<IJavaScriptProxyGenerator>(serviceProvider);
+				proxyGenerator = serviceProvider.GetRequiredService<IJavaScriptProxyGenerator>();
 			}
-			_proxyGenerator = (IJavaScriptProxyGenerator)proxyGenerator;
-			_manager = ServiceProviderServiceExtensions.GetRequiredService<IHubManager>(serviceProvider);
-			_binder = ServiceProviderServiceExtensions.GetRequiredService<IParameterResolver>(serviceProvider);
-			_requestParser = ServiceProviderServiceExtensions.GetRequiredService<IHubRequestParser>(serviceProvider);
-			_serializer = ServiceProviderServiceExtensions.GetRequiredService<JsonSerializer>(serviceProvider);
-			_pipelineInvoker = ServiceProviderServiceExtensions.GetRequiredService<IHubPipelineInvoker>(serviceProvider);
-			_counters = ServiceProviderServiceExtensions.GetRequiredService<IPerformanceCounterManager>(serviceProvider);
+			_proxyGenerator = proxyGenerator;
+			_manager = serviceProvider.GetRequiredService<IHubManager>();
+			_binder = serviceProvider.GetRequiredService<IParameterResolver>();
+			_requestParser = serviceProvider.GetRequiredService<IHubRequestParser>();
+			_serializer = serviceProvider.GetRequiredService<JsonSerializer>();
+			_pipelineInvoker = serviceProvider.GetRequiredService<IHubPipelineInvoker>();
+			_counters = serviceProvider.GetRequiredService<IPerformanceCounterManager>();
 			base.Initialize(serviceProvider);
 		}
 
 		protected override bool AuthorizeRequest(HttpRequest request)
 		{
-			//IL_0019: Unknown result type (might be due to invalid IL or missing references)
 			if (request == null)
 			{
 				throw new ArgumentNullException("request");
 			}
-			string text = StringValues.op_Implicit(request.get_Query().get_Item("connectionData"));
+			string text = request.Query["connectionData"];
 			if (!string.IsNullOrEmpty(text))
 			{
 				IEnumerable<ClientHubInfo> enumerable = base.JsonSerializer.Parse<IEnumerable<ClientHubInfo>>(text);
@@ -166,7 +164,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			}
 			catch (Exception e)
 			{
-				task2 = Microsoft.AspNetCore.SignalR.TaskAsyncHelper.FromError<object>(e);
+				task2 = TaskAsyncHelper.FromError<object>(e);
 			}
 			return task2.ContinueWithPreservedCulture(delegate(Task<object> task)
 			{
@@ -178,11 +176,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 				{
 					return ProcessResponse(null, hubRequest, task.Exception);
 				}
-				if (task.IsCanceled)
-				{
-					return ProcessResponse(null, hubRequest, new OperationCanceledException());
-				}
-				return ProcessResponse(task.Result, hubRequest, null);
+				return task.IsCanceled ? ProcessResponse(null, hubRequest, new OperationCanceledException()) : ProcessResponse(task.Result, hubRequest, null);
 			}).FastUnwrap();
 		}
 
@@ -202,7 +196,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			{
 				throw new ArgumentNullException("context");
 			}
-			string text = context.get_Request().LocalPath().TrimEnd(new char[1]
+			string text = context.Request.LocalPath().TrimEnd(new char[1]
 			{
 				'/'
 			});
@@ -218,8 +212,8 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			if (num != -1)
 			{
 				string serviceUrl = text.Substring(0, text.Length - num);
-				context.get_Response().set_ContentType(JsonUtility.JavaScriptMimeType);
-				return context.get_Response().End(_proxyGenerator.GenerateProxy(serviceUrl));
+				context.Response.ContentType = JsonUtility.JavaScriptMimeType;
+				return context.Response.End(_proxyGenerator.GenerateProxy(serviceUrl));
 			}
 			return base.ProcessRequestCore(context);
 		}
@@ -249,7 +243,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 				if (TypeExtensions.IsAssignableFrom(typeof(Task), returnType))
 				{
 					Task task = (Task)obj;
-					if (!returnType.GetTypeInfo().get_IsGenericType())
+					if (!returnType.GetTypeInfo().IsGenericType)
 					{
 						task.ContinueWith(taskCompletionSource);
 					}
@@ -298,10 +292,10 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			{
 				string groupPrefix = hubDescriptor.Name + ".";
 				List<string> groups2 = (from g in groups
-				where g.StartsWith(groupPrefix, StringComparison.OrdinalIgnoreCase)
-				select g.Substring(groupPrefix.Length)).ToList();
+					where g.StartsWith(groupPrefix, StringComparison.OrdinalIgnoreCase)
+					select g.Substring(groupPrefix.Length)).ToList();
 				return from g in _pipelineInvoker.RejoiningGroups(hubDescriptor, request, groups2)
-				select groupPrefix + g;
+					select groupPrefix + g;
 			}).SelectMany((IEnumerable<string> groupsToRejoin) => groupsToRejoin).ToList();
 		}
 
@@ -333,12 +327,11 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 		private Task ExecuteHubEvent(HttpRequest request, string connectionId, Func<IHub, Task> action)
 		{
 			List<IHub> hubs = GetHubs(request, connectionId).ToList();
-			Task[] array = (from instance in hubs
-			select action(instance).OrEmpty().Catch(Logger)).ToArray();
+			Task[] array = hubs.Select((IHub instance) => action(instance).OrEmpty().Catch(Logger)).ToArray();
 			if (array.Length == 0)
 			{
 				DisposeHubs(hubs);
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+				return TaskAsyncHelper.Empty;
 			}
 			TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
 			Task.Factory.ContinueWhenAll(array, delegate(Task[] tasks)
@@ -376,7 +369,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			}
 			catch (Exception ex)
 			{
-				LoggerExtensions.LogInformation(Logger, $"Error creating Hub {descriptor.Name}. {ex.Message}", Array.Empty<object>());
+				Logger.LogInformation($"Error creating Hub {descriptor.Name}. {ex.Message}");
 				if (throwIfFailedToCreate)
 				{
 					throw;
@@ -388,9 +381,9 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 		private IEnumerable<IHub> GetHubs(HttpRequest request, string connectionId)
 		{
 			return from descriptor in _hubs
-			select CreateHub(request, descriptor, connectionId) into hub
-			where hub != null
-			select hub;
+				select CreateHub(request, descriptor, connectionId) into hub
+				where hub != null
+				select hub;
 		}
 
 		private static void DisposeHubs(IEnumerable<IHub> hubs)

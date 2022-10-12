@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.SignalR.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR.Infrastructure;
 
 namespace Microsoft.AspNetCore.SignalR
 {
@@ -32,8 +32,7 @@ namespace Microsoft.AspNetCore.SignalR
 			{
 				throw new ArgumentNullException("connectionIds");
 			}
-			ConnectionMessage message = new ConnectionMessage((from c in connectionIds
-			select PrefixHelper.GetConnectionId(c)).ToList(), value);
+			ConnectionMessage message = new ConnectionMessage(connectionIds.Select((string c) => PrefixHelper.GetConnectionId(c)).ToList(), value);
 			return connection.Send(message);
 		}
 

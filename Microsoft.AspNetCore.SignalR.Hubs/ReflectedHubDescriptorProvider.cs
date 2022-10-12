@@ -1,9 +1,9 @@
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.AspNetCore.SignalR.Hubs
 {
@@ -19,13 +19,12 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 		{
 			_locator = locator;
 			_hubs = new Lazy<IDictionary<string, HubDescriptor>>(BuildHubsCache);
-			_logger = LoggerFactoryExtensions.CreateLogger<ReflectedHubDescriptorProvider>(loggerFactory);
+			_logger = loggerFactory.CreateLogger<ReflectedHubDescriptorProvider>();
 		}
 
 		public IList<HubDescriptor> GetHubs()
 		{
-			return (from kv in _hubs.Value
-			select kv.Value).Distinct().ToList();
+			return _hubs.Value.Select((KeyValuePair<string, HubDescriptor> kv) => kv.Value).Distinct().ToList();
 		}
 
 		public bool TryGetHub(string hubName, out HubDescriptor descriptor)
@@ -36,21 +35,22 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 		protected IDictionary<string, HubDescriptor> BuildHubsCache()
 		{
 			IEnumerable<HubDescriptor> enumerable = from type in _locator.GetAssemblies().SelectMany(GetTypesSafe).Where(IsHubType)
-			select new HubDescriptor
-			{
-				NameSpecified = (type.GetHubAttributeName() != null),
-				Name = type.GetHubName(),
-				HubType = type
-			};
+				select new HubDescriptor
+				{
+					NameSpecified = (type.GetHubAttributeName() != null),
+					Name = type.GetHubName(),
+					HubType = type
+				};
 			Dictionary<string, HubDescriptor> dictionary = new Dictionary<string, HubDescriptor>(StringComparer.OrdinalIgnoreCase);
 			foreach (HubDescriptor item in enumerable)
 			{
 				HubDescriptor value = null;
-				if (dictionary.TryGetValue(item.Name, out value))
+				if (!dictionary.TryGetValue(item.Name, out value))
 				{
-					throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_DuplicateHubNames, value.HubType.AssemblyQualifiedName, item.HubType.AssemblyQualifiedName, item.Name));
+					dictionary[item.Name] = item;
+					continue;
 				}
-				dictionary[item.Name] = item;
+				throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Resources.Error_DuplicateHubNames, value.HubType.AssemblyQualifiedName, item.HubType.AssemblyQualifiedName, item.Name));
 			}
 			return dictionary;
 		}
@@ -59,7 +59,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 		{
 			try
 			{
-				return TypeExtensions.IsAssignableFrom(typeof(IHub), type) && !type.GetTypeInfo().get_IsAbstract() && (type.GetTypeInfo().get_Attributes().HasFlag(TypeAttributes.Public) || type.GetTypeInfo().get_Attributes().HasFlag(TypeAttributes.NestedPublic));
+				return TypeExtensions.IsAssignableFrom(typeof(IHub), type) && !type.GetTypeInfo().IsAbstract && (type.GetTypeInfo().Attributes.HasFlag(TypeAttributes.Public) || type.GetTypeInfo().Attributes.HasFlag(TypeAttributes.NestedPublic));
 			}
 			catch
 			{
@@ -75,38 +75,21 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			}
 			catch (ReflectionTypeLoadException ex)
 			{
-				LoggerExtensions.LogWarning(_logger, "Some of the classes from assembly \"{0}\" could Not be loaded when searching for Hubs. [{1}]" + Environment.NewLine + "Original exception type: {2}" + Environment.NewLine + "Original exception message: {3}" + Environment.NewLine, new object[4]
-				{
-					a.FullName,
-					null,
-					((object)ex).GetType().get_Name(),
-					ex.Message
-				});
+				_logger.LogWarning("Some of the classes from assembly \"{0}\" could Not be loaded when searching for Hubs. [{1}]" + Environment.NewLine + "Original exception type: {2}" + Environment.NewLine + "Original exception message: {3}" + Environment.NewLine, a.FullName, null, ((object)ex).GetType().Name, ex.Message);
 				if (ex.LoaderExceptions != null)
 				{
-					LoggerExtensions.LogWarning(_logger, "Loader exceptions messages: ", Array.Empty<object>());
+					_logger.LogWarning("Loader exceptions messages: ");
 					Exception[] loaderExceptions = ex.LoaderExceptions;
 					foreach (Exception ex2 in loaderExceptions)
 					{
-						LoggerExtensions.LogWarning(_logger, "{0}" + Environment.NewLine, new object[1]
-						{
-							ex2
-						});
+						_logger.LogWarning("{0}" + Environment.NewLine, ex2);
 					}
 				}
-				return from t in ex.Types
-				where (object)t != null
-				select t;
+				return ex.Types.Where((Type t) => (object)t != null);
 			}
 			catch (Exception ex3)
 			{
-				LoggerExtensions.LogWarning(_logger, "None of the classes from assembly \"{0}\" could be loaded when searching for Hubs. [{1}]\r\nOriginal exception type: {2}\r\nOriginal exception message: {3}\r\n", new object[4]
-				{
-					a.FullName,
-					null,
-					((object)ex3).GetType().get_Name(),
-					ex3.Message
-				});
+				_logger.LogWarning("None of the classes from assembly \"{0}\" could be loaded when searching for Hubs. [{1}]\r\nOriginal exception type: {2}\r\nOriginal exception message: {3}\r\n", a.FullName, null, ((object)ex3).GetType().Name, ex3.Message);
 				return Enumerable.Empty<Type>();
 			}
 		}

@@ -5,7 +5,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 {
 	internal class DisposableAction : IDisposable
 	{
-		public static readonly Microsoft.AspNetCore.SignalR.Infrastructure.DisposableAction Empty = new Microsoft.AspNetCore.SignalR.Infrastructure.DisposableAction(delegate
+		public static readonly DisposableAction Empty = new DisposableAction(delegate
 		{
 		});
 

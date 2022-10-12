@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.AspNetCore.SignalR.Hubs
 {
@@ -29,7 +29,7 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		public static HubInvocationProgress Create(Type progressGenericType, Func<object, Task> sendProgressFunc, ILogger logger)
 		{
-			if (!_progressCreateCache.TryGetValue(progressGenericType, out Func<Func<object, Task>, HubInvocationProgress> value))
+			if (!_progressCreateCache.TryGetValue(progressGenericType, out var value))
 			{
 				value = (Func<Func<object, Task>, HubInvocationProgress>)RuntimeReflectionExtensions.GetRuntimeMethod(typeof(HubInvocationProgress), "Create", new Type[1]
 				{

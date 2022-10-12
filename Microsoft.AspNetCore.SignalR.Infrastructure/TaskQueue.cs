@@ -25,7 +25,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 		public bool IsDrained => _drained;
 
 		public TaskQueue()
-			: this(Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty)
+			: this(TaskAsyncHelper.Empty)
 		{
 		}
 
@@ -57,7 +57,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 					}
 					QueueSizeCounter?.Increment();
 				}
-				return _lastQueuedTask = _lastQueuedTask.Then((Func<object, Task> n, object ns, Microsoft.AspNetCore.SignalR.Infrastructure.TaskQueue q) => q.InvokeNext(n, ns), taskFunc, state, this);
+				return _lastQueuedTask = _lastQueuedTask.Then((Func<object, Task> n, object ns, TaskQueue q) => q.InvokeNext(n, ns), taskFunc, state, this);
 			}
 		}
 
@@ -65,7 +65,7 @@ namespace Microsoft.AspNetCore.SignalR.Infrastructure
 		{
 			return next(nextState).Finally(delegate(object s)
 			{
-				((Microsoft.AspNetCore.SignalR.Infrastructure.TaskQueue)s).Dequeue();
+				((TaskQueue)s).Dequeue();
 			}, this);
 		}
 

@@ -1,9 +1,8 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Primitives;
-using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Text;
+using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 
 namespace Microsoft.AspNetCore.SignalR.Json
 {
@@ -71,10 +70,10 @@ namespace Microsoft.AspNetCore.SignalR.Json
 				throw new ArgumentNullException("name");
 			}
 			return string.Join(".", from n in name.Split(new char[1]
-			{
-				'.'
-			})
-			select char.ToLowerInvariant(n[0]).ToString() + n.Substring(1));
+				{
+					'.'
+				})
+				select char.ToLowerInvariant(n[0]) + n.Substring(1));
 		}
 
 		public static string CreateJsonpCallback(string callback, string payload)
@@ -90,12 +89,10 @@ namespace Microsoft.AspNetCore.SignalR.Json
 
 		public static JsonSerializerSettings CreateDefaultSerializerSettings()
 		{
-			//IL_0000: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0005: Unknown result type (might be due to invalid IL or missing references)
-			//IL_0013: Expected O, but got Unknown
-			JsonSerializerSettings val = new JsonSerializerSettings();
-			val.set_MaxDepth((int?)20);
-			return val;
+			return new JsonSerializerSettings
+			{
+				MaxDepth = 20
+			};
 		}
 
 		public static JsonSerializer CreateDefaultSerializer()
@@ -145,16 +142,15 @@ namespace Microsoft.AspNetCore.SignalR.Json
 
 		internal static bool TryRejectJSONPRequest(SignalROptions options, HttpContext context)
 		{
-			//IL_001a: Unknown result type (might be due to invalid IL or missing references)
 			if (options.EnableJSONP)
 			{
 				return false;
 			}
-			if (string.IsNullOrEmpty(StringValues.op_Implicit(context.get_Request().get_Query().get_Item("callback"))))
+			if (string.IsNullOrEmpty(context.Request.Query["callback"]))
 			{
 				return false;
 			}
-			context.get_Response().set_StatusCode(403);
+			context.Response.StatusCode = 403;
 			return true;
 		}
 

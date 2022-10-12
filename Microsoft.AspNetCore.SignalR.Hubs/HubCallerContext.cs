@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Http;
 using System.Security.Principal;
+using Microsoft.AspNetCore.Http;
 
 namespace Microsoft.AspNetCore.SignalR.Hubs
 {
@@ -11,13 +11,13 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			private set;
 		}
 
-		public virtual IRequestCookieCollection RequestCookies => Request.get_Cookies();
+		public virtual IRequestCookieCollection RequestCookies => Request.Cookies;
 
-		public virtual IHeaderDictionary Headers => Request.get_Headers();
+		public virtual IHeaderDictionary Headers => Request.Headers;
 
-		public virtual IQueryCollection QueryString => Request.get_Query();
+		public virtual IQueryCollection QueryString => Request.Query;
 
-		public virtual IPrincipal User => Request.get_HttpContext().get_User();
+		public virtual IPrincipal User => Request.HttpContext.User;
 
 		public virtual HttpRequest Request
 		{

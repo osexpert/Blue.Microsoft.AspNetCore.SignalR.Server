@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Microsoft.AspNetCore.SignalR.Hubs
 {
@@ -40,59 +40,31 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		public virtual Func<IHub, Task> BuildConnect(Func<IHub, Task> connect)
 		{
-			return delegate(IHub hub)
+			return (IHub hub) => OnBeforeConnect(hub) ? connect(hub).OrEmpty().Then(delegate(IHub h)
 			{
-				if (OnBeforeConnect(hub))
-				{
-					return connect(hub).OrEmpty().Then(delegate(IHub h)
-					{
-						OnAfterConnect(h);
-					}, hub);
-				}
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
-			};
+				OnAfterConnect(h);
+			}, hub) : TaskAsyncHelper.Empty;
 		}
 
 		public virtual Func<IHub, Task> BuildReconnect(Func<IHub, Task> reconnect)
 		{
-			return delegate(IHub hub)
+			return (IHub hub) => OnBeforeReconnect(hub) ? reconnect(hub).OrEmpty().Then(delegate(IHub h)
 			{
-				if (OnBeforeReconnect(hub))
-				{
-					return reconnect(hub).OrEmpty().Then(delegate(IHub h)
-					{
-						OnAfterReconnect(h);
-					}, hub);
-				}
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
-			};
+				OnAfterReconnect(h);
+			}, hub) : TaskAsyncHelper.Empty;
 		}
 
 		public virtual Func<IHub, bool, Task> BuildDisconnect(Func<IHub, bool, Task> disconnect)
 		{
-			return delegate(IHub hub, bool stopCalled)
+			return (IHub hub, bool stopCalled) => OnBeforeDisconnect(hub, stopCalled) ? disconnect(hub, stopCalled).OrEmpty().Then(delegate(IHub h, bool s)
 			{
-				if (OnBeforeDisconnect(hub, stopCalled))
-				{
-					return disconnect(hub, stopCalled).OrEmpty().Then(delegate(IHub h, bool s)
-					{
-						OnAfterDisconnect(h, s);
-					}, hub, stopCalled);
-				}
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
-			};
+				OnAfterDisconnect(h, s);
+			}, hub, stopCalled) : TaskAsyncHelper.Empty;
 		}
 
 		public virtual Func<HubDescriptor, HttpRequest, bool> BuildAuthorizeConnect(Func<HubDescriptor, HttpRequest, bool> authorizeConnect)
 		{
-			return delegate(HubDescriptor hubDescriptor, HttpRequest request)
-			{
-				if (OnBeforeAuthorizeConnect(hubDescriptor, request))
-				{
-					return authorizeConnect(hubDescriptor, request);
-				}
-				return false;
-			};
+			return (HubDescriptor hubDescriptor, HttpRequest request) => OnBeforeAuthorizeConnect(hubDescriptor, request) && authorizeConnect(hubDescriptor, request);
 		}
 
 		public virtual Func<HubDescriptor, HttpRequest, IList<string>, IList<string>> BuildRejoiningGroups(Func<HubDescriptor, HttpRequest, IList<string>, IList<string>> rejoiningGroups)
@@ -102,17 +74,10 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 
 		public virtual Func<IHubOutgoingInvokerContext, Task> BuildOutgoing(Func<IHubOutgoingInvokerContext, Task> send)
 		{
-			return delegate(IHubOutgoingInvokerContext context)
+			return (IHubOutgoingInvokerContext context) => OnBeforeOutgoing(context) ? send(context).OrEmpty().Then(delegate(IHubOutgoingInvokerContext ctx)
 			{
-				if (OnBeforeOutgoing(context))
-				{
-					return send(context).OrEmpty().Then(delegate(IHubOutgoingInvokerContext ctx)
-					{
-						OnAfterOutgoing(ctx);
-					}, context);
-				}
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
-			};
+				OnAfterOutgoing(ctx);
+			}, context) : TaskAsyncHelper.Empty;
 		}
 
 		protected virtual bool OnBeforeAuthorizeConnect(HubDescriptor hubDescriptor, HttpRequest request)

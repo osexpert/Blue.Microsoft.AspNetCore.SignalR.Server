@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR.Infrastructure;
@@ -6,9 +8,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.AspNetCore.SignalR.Transports
 {
@@ -42,7 +41,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		private bool IsJsonp => !string.IsNullOrEmpty(JsonpCallback);
 
-		private string JsonpCallback => StringValues.op_Implicit(base.Context.get_Request().get_Query().get_Item("callback"));
+		private string JsonpCallback => base.Context.Request.Query["callback"];
 
 		public override bool SupportsKeepAlive => !IsJsonp;
 
@@ -50,32 +49,32 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		protected override int MaxMessages => 5000;
 
-		protected override bool SuppressReconnect => !base.Context.get_Request().LocalPath().EndsWith("/reconnect", StringComparison.OrdinalIgnoreCase);
+		protected override bool SuppressReconnect => !base.Context.Request.LocalPath().EndsWith("/reconnect", StringComparison.OrdinalIgnoreCase);
 
 		public LongPollingTransport(HttpContext context, JsonSerializer jsonSerializer, ITransportHeartbeat heartbeat, IPerformanceCounterManager performanceCounterManager, IApplicationLifetime applicationLifetime, ILoggerFactory loggerFactory, IOptions<SignalROptions> optionsAccessor, IMemoryPool pool)
 			: base(context, jsonSerializer, heartbeat, performanceCounterManager, applicationLifetime, loggerFactory, pool)
 		{
-			_pollDelay = optionsAccessor.get_Value().Transports.LongPolling.PollDelay;
+			_pollDelay = optionsAccessor.Value.Transports.LongPolling.PollDelay;
 			_counters = performanceCounterManager;
 		}
 
 		protected override async Task InitializeMessageId()
 		{
-			_lastMessageId = StringValues.op_Implicit(Context.get_Request().get_Query().get_Item("messageId"));
-			if (_lastMessageId == null && Context.get_Request().get_HasFormContentType())
+			_lastMessageId = Context.Request.Query["messageId"];
+			if (_lastMessageId == null && Context.Request.HasFormContentType)
 			{
-				_lastMessageId = StringValues.op_Implicit((await Context.get_Request().ReadFormAsync(default(CancellationToken)).PreserveCulture()).get_Item("messageId"));
+				_lastMessageId = (await Context.Request.ReadFormAsync().PreserveCulture())["messageId"];
 			}
 		}
 
 		public override async Task<string> GetGroupsToken()
 		{
-			StringValues val = Context.get_Request().get_Query().get_Item("groupsToken");
-			if (val.get_Count() == 0 && Context.get_Request().get_HasFormContentType())
+			StringValues values = Context.Request.Query["groupsToken"];
+			if (values.Count == 0 && Context.Request.HasFormContentType)
 			{
-				val = (await Context.get_Request().ReadFormAsync(default(CancellationToken)).PreserveCulture()).get_Item("groupsToken");
+				values = (await Context.Request.ReadFormAsync().PreserveCulture())["groupsToken"];
 			}
-			return StringValues.op_Implicit(val);
+			return values;
 		}
 
 		public override Task KeepAlive()
@@ -114,7 +113,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 				throw new ArgumentNullException("response");
 			}
 			response.Reconnect = base.HostShutdownToken.IsCancellationRequested;
-			Task task = Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+			Task task = TaskAsyncHelper.Empty;
 			if (response.Aborted)
 			{
 				task = Abort();
@@ -126,17 +125,17 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 					return task.Then((LongPollingTransport transport, PersistentResponse resp) => transport.Send(resp), this, response).Then(delegate
 					{
 						_transportLifetime.Complete();
-						return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.False;
+						return TaskAsyncHelper.False;
 					});
 				}
 				return task.Then(delegate
 				{
 					_transportLifetime.Complete();
-					return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.False;
+					return TaskAsyncHelper.False;
 				});
 			}
 			_responseSent = true;
-			return task.Then((LongPollingTransport transport, PersistentResponse resp) => transport.Send(resp), this, response).Then(() => Microsoft.AspNetCore.SignalR.TaskAsyncHelper.False);
+			return task.Then((LongPollingTransport transport, PersistentResponse resp) => transport.Send(resp), this, response).Then(() => TaskAsyncHelper.False);
 		}
 
 		protected internal override Task InitializeResponse(ITransportConnection connection)
@@ -146,11 +145,11 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		protected override async Task ProcessSendRequest()
 		{
-			if (string.IsNullOrEmpty(Context.get_Request().get_ContentType()))
+			if (string.IsNullOrEmpty(Context.Request.ContentType))
 			{
-				Context.get_Request().set_ContentType(ForeverTransport.FormContentType);
+				Context.Request.ContentType = ForeverTransport.FormContentType;
 			}
-			string arg = StringValues.op_Implicit((await Context.get_Request().ReadFormAsync(default(CancellationToken)).PreserveCulture()).get_Item("data")) ?? StringValues.op_Implicit(Context.get_Request().get_Query().get_Item("data"));
+			string arg = ((string)(await Context.Request.ReadFormAsync().PreserveCulture())["data"]) ?? ((string)Context.Request.Query["data"]);
 			if (Received != null)
 			{
 				await Received(arg).PreserveCulture();
@@ -159,27 +158,28 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		private static Task WriteInit(LongPollingTransport transport)
 		{
-			transport.Context.get_Response().set_ContentType(transport.IsJsonp ? JsonUtility.JavaScriptMimeType : JsonUtility.JsonMimeType);
-			return transport.Context.get_Response().Flush();
+			transport.Context.Response.ContentType = (transport.IsJsonp ? JsonUtility.JavaScriptMimeType : JsonUtility.JsonMimeType);
+			return transport.Context.Response.Flush();
 		}
 
-		private static Task PerformKeepAlive(object state)
+		private static async Task PerformKeepAlive(object state)
 		{
 			LongPollingTransport longPollingTransport = (LongPollingTransport)state;
 			if (!longPollingTransport.IsAlive)
 			{
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+				return;// TaskAsyncHelper.Empty;
 			}
-			longPollingTransport.Context.get_Response().Write(_keepAlive);
-			return longPollingTransport.Context.get_Response().Flush();
+			await longPollingTransport.Context.Response.WriteAsync(_keepAlive);
+			//return 
+			await longPollingTransport.Context.Response.Flush();
 		}
 
-		private static Task PerformPartialSend(object state)
+		private static async Task PerformPartialSend(object state)
 		{
 			LongPollingTransportContext longPollingTransportContext = (LongPollingTransportContext)state;
 			if (!longPollingTransportContext.Transport.IsAlive)
 			{
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+				return;// TaskAsyncHelper.Empty;
 			}
 			using (BinaryMemoryPoolTextWriter binaryMemoryPoolTextWriter = new BinaryMemoryPoolTextWriter(longPollingTransportContext.Transport.Pool))
 			{
@@ -194,9 +194,10 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 					binaryMemoryPoolTextWriter.Write(");");
 				}
 				binaryMemoryPoolTextWriter.Flush();
-				longPollingTransportContext.Transport.Context.get_Response().Write(binaryMemoryPoolTextWriter.Buffer);
+				await longPollingTransportContext.Transport.Context.Response.WriteAsync(binaryMemoryPoolTextWriter.Buffer);
 			}
-			return longPollingTransportContext.Transport.Context.get_Response().Flush();
+			//return 
+			await longPollingTransportContext.Transport.Context.Response.Flush();
 		}
 
 		private static Task PerformCompleteSend(object state)
@@ -204,9 +205,9 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 			LongPollingTransportContext longPollingTransportContext = (LongPollingTransportContext)state;
 			if (!longPollingTransportContext.Transport.IsAlive)
 			{
-				return Microsoft.AspNetCore.SignalR.TaskAsyncHelper.Empty;
+				return TaskAsyncHelper.Empty;
 			}
-			longPollingTransportContext.Transport.Context.get_Response().set_ContentType(longPollingTransportContext.Transport.IsJsonp ? JsonUtility.JavaScriptMimeType : JsonUtility.JsonMimeType);
+			longPollingTransportContext.Transport.Context.Response.ContentType = (longPollingTransportContext.Transport.IsJsonp ? JsonUtility.JavaScriptMimeType : JsonUtility.JsonMimeType);
 			return PerformPartialSend(state);
 		}
 
