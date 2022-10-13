@@ -32,10 +32,12 @@ namespace Microsoft.AspNetCore.SignalR.Hubs
 			typeof(DateTimeOffset)
 		};
 
-		private static readonly string ScriptResource = typeof(DefaultJavaScriptProxyGenerator).GetTypeInfo().Assembly.GetName()
-			.Name + ".Scripts.hubs.js";
+        //		private static readonly string ScriptResource = typeof(DefaultJavaScriptProxyGenerator).GetTypeInfo().Assembly.GetName()
+        //			.Name + ".Scripts.hubs.js";
+        private static readonly string ScriptResource = "Microsoft.AspNetCore.SignalR.Server" + ".Scripts.hubs.js";
+       
 
-		private readonly IHubManager _manager;
+        private readonly IHubManager _manager;
 
 		private readonly IJavaScriptMinifier _javaScriptMinifier;
 

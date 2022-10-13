@@ -89,7 +89,7 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		private static async Task WriteInit(ServerSentEventsTransport transport)
 		{
-			transport.Context.Features.Get<IHttpBufferingFeature>()?.DisableRequestBuffering();
+		//	transport.Context.Features.Get<IHttpBufferingFeature>()?.DisableRequestBuffering();
 			transport.Context.Response.ContentType = "text/event-stream";
 			await transport.Context.Response.WriteAsync(new ArraySegment<byte>(_dataInitialized));
 			await transport.Context.Response.Flush();

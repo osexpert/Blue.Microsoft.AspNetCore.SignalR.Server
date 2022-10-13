@@ -11,9 +11,8 @@ using System.Runtime.Versioning;
 [assembly: AssemblyMetadata("CommitHash", "2fe1da87f60fa2a98c8da687155820c942cff6c0")]
 [assembly: AssemblyMetadata("Serviceable", "True")]
 
-/*
-[assembly: AssemblyVersion("0.2.0.0")]
-[assembly: AssemblyFileVersion("0.2.0")]
-[assembly: AssemblyInformationalVersion("0.2.0")]
 
-*/
+[assembly: AssemblyVersion("6.0.0.0")]
+[assembly: AssemblyFileVersion("6.0.0")]
+[assembly: AssemblyInformationalVersion("6.0.0")]
+
