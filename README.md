@@ -2,7 +2,7 @@
 based on Microsoft.AspNetCore.SignalR.Server 0.2.0-preview2-22683
 
 Saved code from ILSpy.  
-Changes some calls from Write to WriteAsync since Write now trigger an error unless Kestrel AllowSynchronousIO is set to false.  
+Changes some calls from Write to WriteAsync (HttpResponseStream?) since Write now trigger an error unless Kestrel AllowSynchronousIO is set to false.  
 
 Also changed target to Netstandard 2.0  
 
