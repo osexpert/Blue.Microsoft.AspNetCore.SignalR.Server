@@ -4,7 +4,6 @@
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <TargetFramework>netstandard2.0</TargetFramework>
 	  <IsPackable>true</IsPackable>
-	  <Version>0.2.0</Version>
   </PropertyGroup>
   <PropertyGroup>
     <LangVersion>7</LangVersion>
@@ -16,14 +15,31 @@ changed to netstandard 2.0</PackageReleaseNotes>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Blue.Microsoft.AspNetCore.SignalR.Messaging" Version="0.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="3.1.0" />
+    <None Remove="Microsoft.AspNetCore.SignalR.Server.Scripts.hubs.js" />
+    <None Remove="Microsoft.AspNetCore.SignalR.Server\Scripts.hubs.js" />
+    <None Remove="Scripts.hubs.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Scripts.hubs.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Microsoft.AspNetCore.SignalR.Server\Scripts.hubs.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="6.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.7" />
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="3.1.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NETCore.Platforms" Version="6.0.6" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.AspNetCore.SignalR.Messaging">
+      <HintPath>..\Microsoft.AspNetCore.SignalR.Messaging.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>
