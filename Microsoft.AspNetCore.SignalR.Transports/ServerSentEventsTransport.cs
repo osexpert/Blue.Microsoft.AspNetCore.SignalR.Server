@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.SignalR.Infrastructure;
 using Microsoft.AspNetCore.SignalR.Json;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using static Microsoft.AspNetCore.Hosting.Internal.HostingApplication;
 
 namespace Microsoft.AspNetCore.SignalR.Transports
 {
@@ -89,9 +90,22 @@ namespace Microsoft.AspNetCore.SignalR.Transports
 
 		private static async Task WriteInit(ServerSentEventsTransport transport)
 		{
-		//	transport.Context.Features.Get<IHttpBufferingFeature>()?.DisableRequestBuffering();
+			//	transport.Context.Features.Get<IHttpBufferingFeature>()?.DisableRequestBuffering();
 			transport.Context.Response.ContentType = "text/event-stream";
-			await transport.Context.Response.WriteAsync(new ArraySegment<byte>(_dataInitialized));
+
+            //        https://github.com/dotnet/aspnetcore/blob/main/src/SignalR/common/Http.Connections/src/Internal/Transports/ServerSentEventsServerTransport.cs
+            //transport.Context.Response.Headers.CacheControl = "no-cache,no-store";
+            //transport.Context.Response.Headers.Pragma = "no-cache";
+            transport.Context.Response.Headers["Cache-Control"] = "no-cache,no-store";
+			transport.Context.Response.Headers["Pragma"] = "no-cache";
+
+            // Make sure we disable all response buffering for SSE
+            var bufferingFeature = transport.Context.Features.Get<IHttpResponseBodyFeature>();// .GetRequiredFeature<IHttpResponseBodyFeature>();
+            bufferingFeature.DisableBuffering();
+
+			transport.Context.Response.Headers["Content-Encoding"] = "identity";
+
+            await transport.Context.Response.WriteAsync(new ArraySegment<byte>(_dataInitialized));
 			await transport.Context.Response.Flush();
 		}
 	}
